@@ -1,0 +1,28 @@
+# StudentFacialAttendanceMarker - Requirements
+# Python 3.10.5 compatible
+
+# Core ML / Vision
+insightface==0.7.3
+onnxruntime==1.17.3
+opencv-python==4.9.0.80
+torch==2.2.1
+numpy==1.26.4
+scipy==1.13.0
+
+# Data & Storage
+pandas==2.2.1
+openpyxl==3.1.2
+
+# UI
+streamlit==1.33.0
+plotly==5.20.0
+
+# Image processing
+Pillow==10.3.0
+
+# Utilities (stdlib - listed for clarity)
+# sqlite3  - built-in
+# hashlib  - built-in
+# secrets  - built-in
+# logging  - built-in
+# threading - built-in
