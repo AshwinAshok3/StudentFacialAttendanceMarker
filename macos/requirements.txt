@@ -1,6 +1,17 @@
-flask==3.1.0
-flask-cors==5.0.1
+# ==========================================================================
+# Pinned requirements for Python 3.10.5 compatibility (macOS)
+# GPU packages (torch, onnxruntime) installed by setup.sh separately
+# ==========================================================================
+flask==3.0.3
+flask-cors==4.0.1
 insightface==0.7.3
-opencv-python-headless==4.10.0.84
+opencv-python-headless==4.9.0.80
 numpy==1.26.4
-Pillow==11.1.0
+Pillow==10.4.0
+Cython==3.0.10
+scikit-learn==1.5.1
+scipy==1.13.1
+onnx==1.16.1
+albumentations==1.4.11
+prettytable==3.10.0
+tqdm==4.66.4
