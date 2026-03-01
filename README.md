@@ -1,202 +1,86 @@
-# StudentFacialAttendanceMarker — README
+# Student Facial Attendance Marker (SFAM)
 
-## Overview
+A production-grade offline biometric attendance system with GPU-accelerated face recognition.
 
-A **fully offline** facial recognition attendance management system built with Python 3.10.5, InsightFace, OpenCV, Streamlit, and SQLite.  
-Students are marked present automatically when their face is detected. Staff and Admin have role-based access to manage data.
-
----
-
-## Folder Structure
+## Architecture
 
 ```
-StudentsFacialAttendanceMarker/
-│
-├── app/
-│   ├── attendance_engine.py    # Core: detect → match → mark
-│   ├── camera_feed.py          # Live Streamlit camera page
-│   └── pages/
-│       ├── landing.py          # Role selector
-│       ├── student_view.py     # Student attendance history
-│       ├── staff_view.py       # Staff login + management
-│       ├── admin_view.py       # Admin full dashboard
-│       └── register.py         # Multi-angle registration
-│
-├── auth/
-│   └── auth_manager.py         # PBKDF2-SHA256 password hashing
-│
-├── database/
-│   ├── db_manager.py           # SQLite ORM (main.db + admin.db)
-│   ├── main.db                 # (auto-created on first run)
-│   └── admin.db                # (auto-created on first run)
-│
-├── utils/
-│   ├── face_utils.py           # InsightFace pipeline
-│   ├── excel_utils.py          # Daily Excel file management
-│   ├── camera.py               # Background camera thread
-│   └── logger.py               # Rotating file + DB logger
-│
-├── attendance_records/
-│   ├── YYYY-MM-DD.xlsx         # Daily attendance files (auto-generated)
-│   └── photos/                 # Face snapshots at attendance time
-│
-├── models/
-│   └── insightface/            # buffalo_l model files (auto-downloaded)
-│
-├── embeddings/                 # Reserved for future embedding exports
-├── logs/
-│   └── app.log                 # Rotating log file
-├── static/css/                 # Custom CSS assets
-│
-├── main.py                     # Entry point
-├── requirements.txt
-└── README.md
+Client (HTML/CSS/JS)  →  HTTP/JSON  →  Flask Server (:5000)
+     getUserMedia()                       ├── InsightFace (GPU/CPU)
+     fetch() API calls                    ├── SQLite Database
+     Canvas charts                        └── REST API
 ```
-
----
 
 ## Quick Start
 
-### 1. Prerequisites
-- Python 3.10.5
-- Windows 10/11 or Ubuntu 20.04+
-- A USB or built-in webcam
+### Windows
+```batch
+cd windows
+setup.bat        # Install dependencies, detect GPU, download models
+run.bat          # Start server → opens http://localhost:5000
+```
 
-### 2. Create Virtual Environment
+### macOS
 ```bash
-python -m venv venv
-# Windows:
-venv\Scripts\activate
-# Linux/macOS:
-source venv/bin/activate
+cd macos
+chmod +x setup.sh run.sh
+./setup.sh       # Install dependencies, detect MPS/CPU, download models
+./run.sh         # Start server → opens http://localhost:5000
 ```
 
-### 3. Install Dependencies
-```bash
-pip install --upgrade pip
-pip install -r requirements.txt
-```
+## Default Admin Login
+- **Email:** `admin@system.local`
+- **Password:** `admin123`
 
-> **Note on InsightFace model**: On first launch, insightface will automatically download the `buffalo_l` model (~360 MB) from the internet. After download, the system is fully offline. To pre-download manually:
-> ```python
-> from insightface.app import FaceAnalysis
-> app = FaceAnalysis(name="buffalo_l", root="models/insightface")
-> app.prepare(ctx_id=-1, det_size=(640, 640))
-> ```
-
-### 4. Run the Application
-```bash
-streamlit run main.py
-```
-
-The app opens at `http://localhost:8501` in your browser.
-
----
-
-## Default Admin Credentials
-
-| Field | Value |
-|-------|-------|
-| Username | `root` |
-| Password | `passwd` |
-
-> **You will be forced to change the password on first login.**
-
----
-
-## Facial Recognition Pipeline
+## Project Structure
 
 ```
-Camera Frame
-    │
-    ▼
-CLAHE Lighting Normalisation
-    │
-    ▼
-InsightFace Detection (buffalo_l, det_score > 0.85)
-    │
-    ▼
-Quality Gate (min 60×60px face, embedding present)
-    │
-    ▼
-512-dim L2-normalised Embedding Extraction
-    │
-    ▼
-Cosine Similarity vs. All Stored Embeddings
-    │
-    ├─ Score ≥ 0.45 → Match Found
-    │       ├─ Already marked today? → Yellow box "Already Marked"
-    │       └─ Not marked? → Green box + Save to SQLite + Excel
-    │
-    └─ Score < 0.45 → Unknown
-                    → Red box → [Register as Student / Staff]
+├── windows/                  # Windows platform
+│   ├── setup.bat             # Automated setup (venv, GPU, models)
+│   ├── run.bat               # Start server
+│   ├── requirements.txt      # Python dependencies
+│   ├── backend/              # Flask REST API
+│   │   ├── app.py            # Entry point
+│   │   ├── routes.py         # API endpoints
+│   │   ├── recognition.py    # InsightFace integration
+│   │   ├── database.py       # SQLite operations
+│   │   ├── auth.py           # Authentication
+│   │   ├── utils.py          # Helpers
+│   │   └── config.py         # Configuration
+│   ├── frontend/             # Static HTML/CSS/JS
+│   │   ├── index.html        # Login page
+│   │   ├── register.html     # Registration + face capture
+│   │   ├── dashboard.html    # Student dashboard
+│   │   ├── admin.html        # Admin panel
+│   │   ├── css/style.css     # Design system
+│   │   └── js/               # Modules (api, camera, charts, app)
+│   └── models/               # InsightFace models (auto-downloaded)
+│
+└── macos/                    # macOS platform (same structure)
 ```
 
-### Threshold Tuning
-- **0.45** — default (good balance for office lighting)
-- **0.50** — stricter, fewer false positives, more missed detections
-- **0.40** — lenient, useful for poor lighting conditions
-- Edit `SIMILARITY_THRESHOLD` in `utils/face_utils.py`
+## Features
 
----
+- **Face Recognition** — InsightFace `buffalo_l` with GPU acceleration
+- **Multi-role Auth** — Admin, Staff, Student logins
+- **Registration** — 5-second video capture → averaged face embedding
+- **Dashboard** — Attendance %, hours, charts, course info
+- **Multi-face** — Handles known + unknown faces intelligently
+- **Fully Offline** — No CDN, no cloud, all assets local
+- **GPU Accelerated** — CUDA (Windows), MPS (macOS), CPU fallback
 
-## Role Permissions
+## GPU Support
 
-| Feature | Student | Staff | Admin |
-|---------|---------|-------|-------|
-| View own attendance | ✅ | — | — |
-| View student attendance | ❌ | ✅ | ✅ |
-| Mark student as Late | ❌ | ✅ | ✅ |
-| View student photos | ❌ | ✅ | ✅ |
-| Full CRUD on records | ❌ | ❌ | ✅ |
-| Manage users | ❌ | ❌ | ✅ |
-| View system logs | ❌ | ❌ | ✅ |
-| Export reports | ❌ | ❌ | ✅ |
-| View analytics | ❌ | ❌ | ✅ |
-| Reset passwords | ❌ | ❌ | ✅ |
+| Platform | GPU | Fallback |
+|----------|-----|----------|
+| Windows | NVIDIA CUDA (RTX/GTX) | CPU |
+| macOS (Apple Silicon) | MPS (Metal) | CPU |
+| macOS (Intel) | — | CPU |
 
----
+## Tech Stack
 
-## Security Design
-
-- **Passwords**: PBKDF2-SHA256 with 260,000 iterations + 256-bit random salt
-- **Timing attack prevention**: `secrets.compare_digest()` for hash comparison
-- **Admin isolation**: Credentials stored in a **separate** `admin.db` file
-- **No plaintext passwords** stored anywhere
-- **SQL injection**: SQLite parameterised queries used throughout
-- **Privilege separation**: Staff cannot access admin.db or admin routes
-
----
-
-## Attendance Excel Files
-
-Location: `attendance_records/YYYY-MM-DD.xlsx`  
-Each file has 3 colour-coded sheets:
-
-| Sheet | Colour | Contents |
-|-------|--------|----------|
-| Students | Blue | All student records |
-| Staff | Green | All staff records |
-| Admin | Brown | All admin records |
-
----
-
-## Troubleshooting
-
-| Issue | Fix |
-|-------|-----|
-| Camera not detected | Check device manager; try changing `camera_index=` in `utils/camera.py` |
-| InsightFace import error | Run `pip install insightface onnxruntime` |
-| Model download fails | Pre-download manually (see Quick Start step 3) |
-| Low recognition accuracy | Register more angles; improve lighting; lower threshold to 0.40 |
-| `main.db` locked | Restart app; ensure no other process is accessing the DB |
-
----
-
-## Performance Notes
-
-- **CPU only** — no GPU required; detection takes ~80–200ms per frame on modern CPU
-- **Embedding cache** — refreshed once per day; eliminates DB reads per frame
-- **In-memory duplicate guard** — `set()` of today's marked IDs prevents redundant DB queries
-- **Camera buffer = 1** — minimal latency between capture and display
-- **WAL mode** — SQLite Write-Ahead Logging enables concurrent reads
+- **Frontend:** HTML5, CSS3, Vanilla JavaScript
+- **Backend:** Python 3.10+, Flask
+- **Database:** SQLite (local file)
+- **ML:** InsightFace, ONNX Runtime, OpenCV
+- **GPU:** PyTorch CUDA / MPS, ONNX Runtime GPU

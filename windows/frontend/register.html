@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Student Registration with Face Capture">
+    <title>SFAM — Register</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="bg-animation"></div>
+
+    <div class="auth-container">
+        <div class="auth-card wide">
+            <div class="auth-header">
+                <div class="logo">📸</div>
+                <h1>Student Registration</h1>
+                <p>Create your account with face verification</p>
+            </div>
+
+            <form id="registerForm" autocomplete="off">
+                <!-- Step 1: User Details -->
+                <div id="step1">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="regName">Full Name</label>
+                            <input type="text" id="regName" placeholder="John Doe" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="regEmail">Email Address</label>
+                            <input type="email" id="regEmail" placeholder="john@university.edu" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="regDepartment">Department</label>
+                            <select id="regDepartment">
+                                <option value="CS">Computer Science</option>
+                                <option value="EC">Electronics</option>
+                                <option value="ME">Mechanical</option>
+                                <option value="CE">Civil</option>
+                                <option value="EE">Electrical</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="regPassword">Password</label>
+                            <input type="password" id="regPassword" placeholder="Min 4 characters" required>
+                        </div>
+                    </div>
+
+                    <button type="button" id="toStep2Btn" class="btn btn-primary btn-block" onclick="goToStep2()">
+                        Next — Face Capture →
+                    </button>
+                </div>
+
+                <!-- Step 2: Face Capture -->
+                <div id="step2" class="hidden">
+                    <div class="camera-container" id="regCameraContainer">
+                        <video id="regVideo" autoplay playsinline muted></video>
+                        <div class="camera-overlay">
+                            <div class="face-guide"></div>
+                        </div>
+                        <div class="recording-indicator" id="recIndicator">
+                            ● REC
+                        </div>
+                        <div class="countdown-overlay" id="countdown">
+                            <span class="countdown-number" id="countdownNum">3</span>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-2" style="color: var(--text-secondary); font-size: 0.85rem;">
+                        <p>Position your face within the oval guide.</p>
+                        <p>A 5-second video will be captured for face registration.</p>
+                    </div>
+
+                    <div class="camera-controls mt-2">
+                        <button type="button" id="backBtn" class="btn btn-secondary" onclick="goToStep1()">
+                            ← Back
+                        </button>
+                        <button type="button" id="captureBtn" class="btn btn-primary btn-lg" onclick="startCapture()">
+                            📸 Start Face Capture
+                        </button>
+                    </div>
+
+                    <!-- Progress bar during processing -->
+                    <div id="processingBar" class="hidden mt-2">
+                        <div style="background: var(--bg-glass); border-radius: 4px; height: 6px; overflow: hidden;">
+                            <div id="progressFill" style="height: 100%; background: linear-gradient(90deg, var(--accent-start), var(--accent-end)); width: 0%; transition: width 0.3s;"></div>
+                        </div>
+                        <p id="processingText" class="text-center mt-1" style="color: var(--text-secondary); font-size: 0.85rem;">
+                            Processing frames...
+                        </p>
+                    </div>
+                </div>
+            </form>
+
+            <div class="text-center mt-3">
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                    Already registered?
+                    <a href="index.html">Sign in</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner spinner-lg"></div>
+        <p style="color: var(--text-secondary);">Registering your face...</p>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/camera.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        var capturedFrames = [];
+
+        function goToStep2() {
+            var name = document.getElementById('regName').value.trim();
+            var email = document.getElementById('regEmail').value.trim();
+            var password = document.getElementById('regPassword').value;
+
+            if (!name || !email || !password) {
+                showToast('Please fill in all fields', 'warning');
+                return;
+            }
+            if (password.length < 4) {
+                showToast('Password must be at least 4 characters', 'warning');
+                return;
+            }
+
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.remove('hidden');
+
+            // Start camera
+            startCamera(document.getElementById('regVideo'));
+        }
+
+        function goToStep1() {
+            stopCamera();
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step1').classList.remove('hidden');
+        }
+
+        async function startCapture() {
+            var btn = document.getElementById('captureBtn');
+            btn.disabled = true;
+            capturedFrames = [];
+
+            // Countdown 3-2-1
+            var countdownEl = document.getElementById('countdown');
+            var countdownNum = document.getElementById('countdownNum');
+            countdownEl.classList.add('active');
+
+            for (var i = 3; i >= 1; i--) {
+                countdownNum.textContent = i;
+                countdownNum.style.animation = 'none';
+                void countdownNum.offsetHeight; // trigger reflow
+                countdownNum.style.animation = 'countPop 1s ease-out';
+                await sleep(1000);
+            }
+            countdownEl.classList.remove('active');
+
+            // Show recording indicator
+            document.getElementById('recIndicator').classList.add('active');
+
+            // Capture frames over 5 seconds (~3 frames per second)
+            var duration = 5000;
+            var interval = 333; // ~3 fps
+            var elapsed = 0;
+            var video = document.getElementById('regVideo');
+
+            return new Promise(function(resolve) {
+                var timer = setInterval(function() {
+                    var frame = captureFrame(video);
+                    if (frame) {
+                        capturedFrames.push(frame);
+                    }
+                    elapsed += interval;
+
+                    if (elapsed >= duration) {
+                        clearInterval(timer);
+                        document.getElementById('recIndicator').classList.remove('active');
+                        resolve();
+                    }
+                }, interval);
+            }).then(function() {
+                submitRegistration();
+            });
+        }
+
+        async function submitRegistration() {
+            if (capturedFrames.length < 3) {
+                showToast('Not enough frames captured. Please try again.', 'error');
+                document.getElementById('captureBtn').disabled = false;
+                return;
+            }
+
+            // Show processing state
+            document.getElementById('processingBar').classList.remove('hidden');
+            document.getElementById('loadingOverlay').classList.add('active');
+
+            var progressFill = document.getElementById('progressFill');
+            progressFill.style.width = '30%';
+
+            var data = {
+                name: document.getElementById('regName').value.trim(),
+                email: document.getElementById('regEmail').value.trim().toLowerCase(),
+                department: document.getElementById('regDepartment').value,
+                password: document.getElementById('regPassword').value,
+                frames: capturedFrames,
+            };
+
+            progressFill.style.width = '60%';
+
+            try {
+                var result = await apiRegister(data);
+                progressFill.style.width = '100%';
+
+                document.getElementById('loadingOverlay').classList.remove('active');
+
+                if (result.error) {
+                    showToast(result.error, 'error');
+                    document.getElementById('captureBtn').disabled = false;
+                    document.getElementById('processingBar').classList.add('hidden');
+                    return;
+                }
+
+                // Success!
+                saveSession(result.token, result.user);
+                showToast(result.message || 'Registration successful!', 'success');
+
+                stopCamera();
+                setTimeout(function() {
+                    redirectToDashboard('student');
+                }, 1500);
+
+            } catch (err) {
+                document.getElementById('loadingOverlay').classList.remove('active');
+                document.getElementById('processingBar').classList.add('hidden');
+                showToast('Registration failed: ' + err.message, 'error');
+                document.getElementById('captureBtn').disabled = false;
+            }
+        }
+
+        function sleep(ms) {
+            return new Promise(function(resolve) { setTimeout(resolve, ms); });
+        }
+    </script>
+</body>
+</html>

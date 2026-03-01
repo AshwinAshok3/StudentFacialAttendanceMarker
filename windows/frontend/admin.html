@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Admin Panel — Manage Students & System">
+    <title>SFAM — Admin</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="bg-animation"></div>
+
+    <button class="mobile-menu-btn" id="menuBtn" onclick="toggleSidebar()">☰</button>
+
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-brand">
+                <span class="logo">🛡</span>
+                <h3>SFAM Admin</h3>
+            </div>
+
+            <ul class="sidebar-nav">
+                <li><a href="#students" class="active" onclick="showAdminSection('students', this)">👥 Students</a></li>
+                <li><a href="#system" onclick="showAdminSection('system', this)">⚙ System Info</a></li>
+                <li><a href="#markAll" onclick="showAdminSection('markAll', this)">📸 Mark Attendance</a></li>
+            </ul>
+
+            <div class="sidebar-user">
+                <div class="sidebar-user-info">
+                    <div class="sidebar-user-avatar" id="adminAvatar">A</div>
+                    <div>
+                        <div class="sidebar-user-name" id="adminName">Admin</div>
+                        <div class="sidebar-user-role">administrator</div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary btn-sm btn-block" onclick="logout()">
+                    Sign Out
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Students Section -->
+            <section id="section-students">
+                <div class="page-header">
+                    <h1>Registered Students</h1>
+                    <div class="search-box">
+                        <input type="text" id="studentSearch" placeholder="Search students..."
+                            oninput="filterStudents(this.value)">
+                    </div>
+                </div>
+
+                <div class="stats-grid mb-3">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">👥</div>
+                        <div>
+                            <div class="stat-value" id="totalStudents">—</div>
+                            <div class="stat-label">Total Students</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green">✓</div>
+                        <div>
+                            <div class="stat-value" id="avgAttendance">—</div>
+                            <div class="stat-label">Avg Attendance</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Department</th>
+                                    <th>Attendance</th>
+                                    <th>Registered</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentsTable">
+                                <tr>
+                                    <td colspan="6" class="text-center"
+                                        style="color:var(--text-secondary);padding:2rem;">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- System Info Section -->
+            <section id="section-system" class="hidden">
+                <div class="page-header">
+                    <h1>System Information</h1>
+                </div>
+
+                <div class="stats-grid mb-3">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">💻</div>
+                        <div>
+                            <div class="stat-value" id="sysOS">—</div>
+                            <div class="stat-label">Operating System</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green">🐍</div>
+                        <div>
+                            <div class="stat-value" id="sysPython">—</div>
+                            <div class="stat-label">Python Version</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange">🎮</div>
+                        <div>
+                            <div class="stat-value" id="sysGPU">—</div>
+                            <div class="stat-label">GPU Device</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon purple">🧠</div>
+                        <div>
+                            <div class="stat-value" id="sysModel">—</div>
+                            <div class="stat-label">Model Status</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Full System Details</h3>
+                    </div>
+                    <div class="card-body">
+                        <table>
+                            <tbody id="sysDetailsTable">
+                                <tr>
+                                    <td colspan="2" class="text-center"
+                                        style="color:var(--text-secondary);padding:2rem;">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Attendance Marking Section -->
+            <section id="section-markAll" class="hidden">
+                <div class="page-header">
+                    <h1>Bulk Attendance</h1>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="camera-container" id="adminCameraContainer">
+                            <video id="adminVideo" autoplay playsinline muted></video>
+                            <div class="camera-overlay">
+                                <div class="face-guide"></div>
+                            </div>
+                            <div class="recognition-result" id="adminRecResult">
+                                <span id="adminRecIcon">✓</span>
+                                <span id="adminRecText">—</span>
+                            </div>
+                        </div>
+                        <div class="camera-controls mt-2">
+                            <button id="adminCamBtn" class="btn btn-secondary" onclick="toggleAdminCamera()">
+                                📷 Start Camera
+                            </button>
+                            <button id="adminSnapBtn" class="btn btn-primary btn-lg" onclick="adminSnapAndRecognize()"
+                                disabled>
+                                ⚡ Recognize & Mark
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Toast container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="js/api.js"></script>
+    <script src="js/camera.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        var allStudents = [];
+        var adminCameraActive = false;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var session = getSession();
+            if (!session) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            if (session.role !== 'admin' && session.role !== 'staff') {
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
+            document.getElementById('adminName').textContent = session.name;
+            document.getElementById('adminAvatar').textContent = session.name.charAt(0).toUpperCase();
+
+            loadStudents();
+            loadSystemInfo();
+        });
+
+        async function loadStudents() {
+            try {
+                var data = await apiGetStudents();
+                allStudents = data.students || [];
+
+                document.getElementById('totalStudents').textContent = allStudents.length;
+
+                // Calculate average attendance
+                if (allStudents.length > 0) {
+                    var sumPct = allStudents.reduce(function (acc, s) {
+                        return acc + (s.stats ? s.stats.percentage : 0);
+                    }, 0);
+                    document.getElementById('avgAttendance').textContent =
+                        (sumPct / allStudents.length).toFixed(1) + '%';
+                }
+
+                renderStudentTable(allStudents);
+            } catch (err) {
+                showToast('Failed to load students', 'error');
+            }
+        }
+
+        function renderStudentTable(students) {
+            var tbody = document.getElementById('studentsTable');
+            if (students.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="color:var(--text-secondary);padding:2rem;">No students registered</td></tr>';
+                return;
+            }
+
+            var html = '';
+            students.forEach(function (s) {
+                var pct = s.stats ? s.stats.percentage : 0;
+                var badgeClass = pct >= 75 ? 'badge-success' : (pct >= 50 ? 'badge-warning' : 'badge-danger');
+                var dt = s.created_at ? new Date(s.created_at).toLocaleDateString() : '—';
+
+                html += '<tr>' +
+                    '<td>' + s.id + '</td>' +
+                    '<td>' + s.name + '</td>' +
+                    '<td>' + s.email + '</td>' +
+                    '<td>' + s.department + '</td>' +
+                    '<td><span class="badge ' + badgeClass + '">' + pct + '%</span></td>' +
+                    '<td>' + dt + '</td>' +
+                    '</tr>';
+            });
+            tbody.innerHTML = html;
+        }
+
+        function filterStudents(query) {
+            var q = query.toLowerCase();
+            var filtered = allStudents.filter(function (s) {
+                return s.name.toLowerCase().includes(q) ||
+                    s.email.toLowerCase().includes(q) ||
+                    s.department.toLowerCase().includes(q);
+            });
+            renderStudentTable(filtered);
+        }
+
+        async function loadSystemInfo() {
+            try {
+                var info = await apiGetSystemInfo();
+
+                document.getElementById('sysOS').textContent = info.os || '—';
+                document.getElementById('sysPython').textContent = info.python_version || '—';
+                document.getElementById('sysGPU').textContent = (info.gpu_device || 'cpu').toUpperCase();
+                document.getElementById('sysModel').textContent = info.model_ready ? 'Loaded' : 'Not Loaded';
+
+                var details = [
+                    ['Operating System', info.os + ' ' + (info.os_version || '').substring(0, 30)],
+                    ['Architecture', info.architecture],
+                    ['Python', info.python_version],
+                    ['GPU Device', (info.gpu_device || 'cpu').toUpperCase()],
+                    ['GPU Name', info.gpu_name],
+                    ['CUDA Available', info.cuda_available ? 'Yes' : 'No'],
+                    ['MPS Available', info.mps_available ? 'Yes' : 'No'],
+                    ['Model', info.model_name],
+                    ['Model Ready', info.model_ready ? 'Yes' : 'No'],
+                ];
+
+                var html = '';
+                details.forEach(function (d) {
+                    html += '<tr><td style="color:var(--text-secondary);width:180px;">' + d[0] + '</td><td>' + d[1] + '</td></tr>';
+                });
+                document.getElementById('sysDetailsTable').innerHTML = html;
+            } catch (err) {
+                showToast('Failed to load system info', 'error');
+            }
+        }
+
+        function showAdminSection(name, el) {
+            document.querySelectorAll('[id^="section-"]').forEach(function (s) {
+                s.classList.add('hidden');
+            });
+            document.getElementById('section-' + name).classList.remove('hidden');
+
+            document.querySelectorAll('.sidebar-nav a').forEach(function (a) {
+                a.classList.remove('active');
+            });
+            if (el) el.classList.add('active');
+
+            // Stop camera when leaving
+            if (name !== 'markAll' && adminCameraActive) {
+                stopCamera();
+                adminCameraActive = false;
+                document.getElementById('adminCamBtn').textContent = '📷 Start Camera';
+                document.getElementById('adminSnapBtn').disabled = true;
+            }
+
+            document.getElementById('sidebar').classList.remove('open');
+        }
+
+        function toggleAdminCamera() {
+            if (adminCameraActive) {
+                stopCamera();
+                adminCameraActive = false;
+                document.getElementById('adminCamBtn').textContent = '📷 Start Camera';
+                document.getElementById('adminSnapBtn').disabled = true;
+            } else {
+                startCamera(document.getElementById('adminVideo'));
+                adminCameraActive = true;
+                document.getElementById('adminCamBtn').textContent = '⏹ Stop Camera';
+                document.getElementById('adminSnapBtn').disabled = false;
+            }
+        }
+
+        async function adminSnapAndRecognize() {
+            var btn = document.getElementById('adminSnapBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Recognizing...';
+
+            var video = document.getElementById('adminVideo');
+            var frame = captureFrame(video);
+
+            if (!frame) {
+                showToast('Could not capture frame', 'error');
+                btn.disabled = false;
+                btn.textContent = '⚡ Recognize & Mark';
+                return;
+            }
+
+            try {
+                var result = await apiRecognize(frame);
+                var recResult = document.getElementById('adminRecResult');
+                var recIcon = document.getElementById('adminRecIcon');
+                var recText = document.getElementById('adminRecText');
+
+                if (result.error) {
+                    recResult.className = 'recognition-result active unmatched';
+                    recIcon.textContent = '✗';
+                    recText.textContent = result.error;
+                    showToast(result.error, 'error');
+                } else if (result.faces && result.faces.length > 0 && result.faces[0].matched) {
+                    var face = result.faces[0];
+                    recResult.className = 'recognition-result active matched';
+                    recIcon.textContent = '✓';
+                    recText.textContent = face.name + ' (' + (face.similarity * 100).toFixed(1) + '%)';
+
+                    var markResult = await apiMarkAttendance(face.user_id);
+                    showToast(markResult.message, 'success');
+                    loadStudents(); // Refresh stats
+                } else {
+                    recResult.className = 'recognition-result active unmatched';
+                    recIcon.textContent = '?';
+                    recText.textContent = result.message || 'Face not recognized';
+                    showToast(result.message || 'Face not recognized', 'warning');
+                }
+
+                setTimeout(function () {
+                    recResult.classList.remove('active');
+                }, 5000);
+
+            } catch (err) {
+                showToast('Recognition failed: ' + err.message, 'error');
+            }
+
+            btn.disabled = false;
+            btn.textContent = '⚡ Recognize & Mark';
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+    </script>
+</body>
+
+</html>
