@@ -1,151 +1,151 @@
 /**
- * api.js — REST API client for Facial Attendance System.
- *
- * All functions return Promises that resolve to JSON responses.
- * Uses fetch() with auth token from localStorage.
- * No external dependencies.
+ * api.js — All fetch calls to the Flask backend.
+ * No auth headers for kiosk and health endpoints.
+ * All others send Bearer token from sessionStorage.
  */
 
-var API_BASE = '/api';
+const API_BASE = '';  // Same origin
 
-// ---------------------------------------------------------------------------
+// -------------------------------------------------------------------------
 // Internal helpers
-// ---------------------------------------------------------------------------
+// -------------------------------------------------------------------------
 
-/**
- * Make an authenticated API request.
- * Automatically attaches the Bearer token if present.
- */
-function apiRequest(endpoint, options) {
-    options = options || {};
-    var url = API_BASE + endpoint;
-    var headers = options.headers || {};
-
-    // Attach auth token
-    var token = localStorage.getItem('sfam_token');
-    if (token) {
-        headers['Authorization'] = 'Bearer ' + token;
-    }
-
-    // Default to JSON content type for POST
-    if (options.method === 'POST' && !headers['Content-Type']) {
-        headers['Content-Type'] = 'application/json';
-    }
-
-    return fetch(url, {
-        method: options.method || 'GET',
-        headers: headers,
-        body: options.body || null,
-    }).then(function (response) {
-        // Handle 401 — force logout
-        if (response.status === 401) {
-            clearSession();
-            window.location.href = 'index.html';
-            return { error: 'Session expired. Please login again.' };
-        }
-        return response.json();
-    }).catch(function (err) {
-        console.error('[API] Request failed:', err);
-        throw err;
-    });
+function _authHeaders() {
+    var session = getSession();
+    var token = session ? session.token : null;
+    return Object.assign(
+        { 'Content-Type': 'application/json' },
+        token ? { 'Authorization': 'Bearer ' + token } : {}
+    );
 }
 
-// ---------------------------------------------------------------------------
-// Auth API
-// ---------------------------------------------------------------------------
-
-/**
- * Login with email and password.
- * Returns: { token, user: {id, name, email, role, department} }
- */
-function apiLogin(email, password) {
-    return apiRequest('/auth/login', {
+async function _post(url, body, auth) {
+    auth = (auth !== false);
+    var res = await fetch(API_BASE + url, {
         method: 'POST',
-        body: JSON.stringify({ email: email, password: password }),
+        headers: auth ? _authHeaders() : { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
     });
+    return res.json();
 }
 
-/**
- * Register a new student with face frames.
- * data: { name, email, department, password, frames: [base64...] }
- */
-function apiRegister(data) {
-    return apiRequest('/auth/register', {
-        method: 'POST',
-        body: JSON.stringify(data),
+async function _get(url, params) {
+    var qs = params ? ('?' + new URLSearchParams(params).toString()) : '';
+    var res = await fetch(API_BASE + url + qs, { headers: _authHeaders() });
+    return res.json();
+}
+
+async function _delete(url) {
+    var res = await fetch(API_BASE + url, {
+        method: 'DELETE',
+        headers: _authHeaders(),
     });
+    return res.json();
 }
 
-// ---------------------------------------------------------------------------
-// Recognition API
-// ---------------------------------------------------------------------------
-
-/**
- * Send a frame for face recognition.
- * frame: base64 image string
- * Returns: { faces: [{bbox, matched, user_id, name, similarity}], message }
- */
-function apiRecognize(frame) {
-    return apiRequest('/recognize', {
-        method: 'POST',
-        body: JSON.stringify({ frame: frame }),
+async function _patch(url, body) {
+    var res = await fetch(API_BASE + url, {
+        method: 'PATCH',
+        headers: _authHeaders(),
+        body: JSON.stringify(body),
     });
+    return res.json();
 }
 
-// ---------------------------------------------------------------------------
-// Attendance API
-// ---------------------------------------------------------------------------
+// -------------------------------------------------------------------------
+// P4: Health check — polled by loading screen
+// -------------------------------------------------------------------------
 
-/**
- * Mark attendance for a recognized student.
- * Returns: { message, stats }
- */
-function apiMarkAttendance(userId, courseId) {
-    return apiRequest('/attendance/mark', {
-        method: 'POST',
-        body: JSON.stringify({ user_id: userId, course_id: courseId || null }),
-    });
+async function apiHealthCheck() {
+    var res = await fetch(API_BASE + '/api/health');
+    return res.json();
 }
 
-/**
- * Get attendance records for a student.
- * Returns: { records: [{id, timestamp, status, ...}] }
- */
-function apiGetAttendance(userId, startDate, endDate) {
-    var query = '';
-    if (startDate) query += '?start=' + startDate;
-    if (endDate) query += (query ? '&' : '?') + 'end=' + endDate;
-    return apiRequest('/attendance/' + userId + query);
+// -------------------------------------------------------------------------
+// Auth
+// -------------------------------------------------------------------------
+
+async function apiLogin(identifier, password, role) {
+    return _post('/api/auth/login', { identifier: identifier, password: password, role: role || 'student' }, false);
 }
 
-// ---------------------------------------------------------------------------
-// Dashboard API
-// ---------------------------------------------------------------------------
-
-/**
- * Get dashboard data for a student.
- * Returns: { user, stats, weekly, courses }
- */
-function apiGetDashboard(userId) {
-    return apiRequest('/dashboard/' + userId);
+async function apiRegisterStudent(data) {
+    return _post('/api/auth/register/student', data, false);
 }
 
-// ---------------------------------------------------------------------------
-// Admin API
-// ---------------------------------------------------------------------------
-
-/**
- * Get all registered students with their stats.
- * Returns: { students: [{id, name, email, department, stats}] }
- */
-function apiGetStudents() {
-    return apiRequest('/students');
+async function apiRegisterStaff(data) {
+    return _post('/api/auth/register/staff', data, false);
 }
 
-/**
- * Get system information (GPU, model, OS).
- * Returns: { os, python_version, gpu_device, gpu_name, model_ready, ... }
- */
-function apiGetSystemInfo() {
-    return apiRequest('/system/info');
+// -------------------------------------------------------------------------
+// Kiosk (no auth)
+// -------------------------------------------------------------------------
+
+async function apiKioskRecognize(frameBase64) {
+    return _post('/api/recognize/kiosk', { frame: frameBase64 }, false);
+}
+
+// -------------------------------------------------------------------------
+// Student dashboard
+// -------------------------------------------------------------------------
+
+async function apiStudentDashboard(userId) {
+    return _get('/api/dashboard/' + userId);
+}
+
+async function apiGetAttendance(userId, start, end) {
+    var params = {};
+    if (start) params.start = start;
+    if (end) params.end = end;
+    return _get('/api/attendance/' + userId, params);
+}
+
+// -------------------------------------------------------------------------
+// Staff dashboard
+// -------------------------------------------------------------------------
+
+async function apiStaffDashboard(userId, date) {
+    return _get('/api/dashboard/staff/' + userId, date ? { date: date } : null);
+}
+
+// -------------------------------------------------------------------------
+// P1: Admin endpoints
+// -------------------------------------------------------------------------
+
+async function apiAdminListUsers(role) {
+    return _get('/api/admin/users', (role && role !== 'all') ? { role: role } : null);
+}
+
+async function apiAdminDeleteUser(userId) {
+    return _delete('/api/admin/users/' + userId + '/delete');
+}
+
+async function apiAdminEditUser(userId, fields) {
+    return _patch('/api/admin/users/' + userId + '/edit', fields);
+}
+
+async function apiAdminAttendanceLogs(date, limit, offset) {
+    var params = {};
+    if (date) params.date = date;
+    if (limit) params.limit = limit;
+    if (offset) params.offset = offset;
+    return _get('/api/admin/attendance/logs', params);
+}
+
+async function apiListStaff() {
+    return _get('/api/staff');
+}
+
+// ---------- Backwards-compat aliases used by admin.html ----------
+
+async function apiGetStudents() {
+    return _get('/api/students');
+}
+
+async function apiMarkAttendance(userId, courseId) {
+    return _post('/api/attendance/mark', { user_id: userId, course_id: courseId || null });
+}
+
+async function apiGetSystemInfo() {
+    return _get('/api/system/info');
 }

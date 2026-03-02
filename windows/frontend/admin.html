@@ -4,393 +4,782 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Admin Panel — Manage Students & System">
-    <title>SFAM — Admin</title>
+    <title>SFAM — Admin Dashboard</title>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Admin-specific layout */
+        .admin-layout {
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            min-height: 100vh;
+        }
+
+        .admin-sidebar {
+            background: var(--navy);
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid rgba(255, 255, 255, .06);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+        }
+
+        .admin-sidebar-brand {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, .08);
+        }
+
+        .admin-sidebar-brand h2 {
+            color: #fff;
+            font-size: 1.05rem;
+            margin-bottom: .15rem;
+        }
+
+        .admin-sidebar-brand p {
+            color: rgba(255, 255, 255, .35);
+            font-size: .75rem;
+        }
+
+        .admin-sidebar-brand .brand-icon {
+            font-size: 1.8rem;
+            margin-bottom: .35rem;
+        }
+
+        .admin-nav {
+            padding: 1rem .75rem;
+            flex: 1;
+        }
+
+        .admin-nav-btn {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            width: 100%;
+            padding: .65rem .9rem;
+            border: none;
+            border-radius: var(--r-sm);
+            background: transparent;
+            color: rgba(255, 255, 255, .6);
+            font-family: inherit;
+            font-size: .88rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--t);
+            text-align: left;
+            margin-bottom: .25rem;
+        }
+
+        .admin-nav-btn:hover {
+            background: rgba(255, 255, 255, .07);
+            color: #fff;
+        }
+
+        .admin-nav-btn.active {
+            background: rgba(0, 180, 216, .15);
+            color: var(--accent);
+        }
+
+        .admin-nav-btn .nav-icon {
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            width: 22px;
+            text-align: center;
+        }
+
+        .admin-sidebar-footer {
+            padding: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, .06);
+        }
+
+        .admin-main {
+            background: var(--off-white);
+            overflow-y: auto;
+        }
+
+        .admin-topbar {
+            background: #fff;
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .admin-topbar h3 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .admin-content {
+            padding: 1.75rem 2rem;
+        }
+
+        .admin-section {
+            display: none;
+        }
+
+        .admin-section.active {
+            display: block;
+        }
+
+        /* Section header */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+            gap: .75rem;
+        }
+
+        .section-header h2 {
+            font-size: 1.25rem;
+        }
+
+        /* Filter row */
+        .filter-row {
+            display: flex;
+            gap: .75rem;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-row input,
+        .filter-row select {
+            padding: .45rem .8rem;
+            font-size: .88rem;
+            border-radius: var(--r-sm);
+            border: 1.5px solid var(--border);
+            background: #fff;
+            font-family: inherit;
+            color: var(--text-main);
+        }
+
+        /* Edit modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .25s ease;
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-box {
+            background: #fff;
+            border-radius: var(--r);
+            padding: 2rem;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: var(--shadow-lg);
+            transform: translateY(16px);
+            transition: transform .25s ease;
+        }
+
+        .modal-overlay.open .modal-box {
+            transform: translateY(0);
+        }
+
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: .75rem;
+            justify-content: flex-end;
+            margin-top: 1.25rem;
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block;
+            padding: 2px 9px;
+            border-radius: 20px;
+            font-size: .75rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .badge-danger {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .badge-info {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .badge-staff {
+            background: #ede9fe;
+            color: #6d28d9;
+        }
+
+        /* Action buttons in table */
+        .tbl-action {
+            font-size: .78rem;
+            padding: .3rem .65rem;
+        }
+    </style>
 </head>
 
 <body>
-    <div class="bg-animation"></div>
 
-    <button class="mobile-menu-btn" id="menuBtn" onclick="toggleSidebar()">☰</button>
+    <!-- Edit User Modal -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal-box">
+            <div class="modal-title">Edit User</div>
+            <input type="hidden" id="editUserId">
+            <div class="form-group"><label>Name</label><input type="text" id="editName"></div>
+            <div class="form-group"><label>Department</label><input type="text" id="editDept"></div>
+            <div class="form-group" id="editStudentFields">
+                <label>Year</label><input type="text" id="editYear">
+                <label class="mt-1">Course Opted</label><input type="text" id="editCourse">
+            </div>
+            <div class="form-group" id="editStaffFields" style="display:none;">
+                <label>Specialization</label><input type="text" id="editSpec">
+                <label class="mt-1">Courses Teaching</label><input type="text" id="editCoursesTeaching">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline btn-sm" id="closeEditModal">Cancel</button>
+                <button class="btn btn-primary btn-sm" id="saveEditBtn">Save Changes</button>
+            </div>
+        </div>
+    </div>
 
-    <div class="dashboard-layout">
+    <div class="admin-layout">
+
         <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-brand">
-                <span class="logo">🛡</span>
-                <h3>SFAM Admin</h3>
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar-brand">
+                <div class="brand-icon">🛡️</div>
+                <h2>SFAM Admin</h2>
+                <p>System Administrator</p>
             </div>
 
-            <ul class="sidebar-nav">
-                <li><a href="#students" class="active" onclick="showAdminSection('students', this)">👥 Students</a></li>
-                <li><a href="#system" onclick="showAdminSection('system', this)">⚙ System Info</a></li>
-                <li><a href="#markAll" onclick="showAdminSection('markAll', this)">📸 Mark Attendance</a></li>
-            </ul>
-
-            <div class="sidebar-user">
-                <div class="sidebar-user-info">
-                    <div class="sidebar-user-avatar" id="adminAvatar">A</div>
-                    <div>
-                        <div class="sidebar-user-name" id="adminName">Admin</div>
-                        <div class="sidebar-user-role">administrator</div>
-                    </div>
-                </div>
-                <button class="btn btn-secondary btn-sm btn-block" onclick="logout()">
-                    Sign Out
+            <nav class="admin-nav">
+                <button class="admin-nav-btn active" data-section="students" id="navStudents">
+                    <span class="nav-icon">👥</span> Students
                 </button>
+                <button class="admin-nav-btn" data-section="staff" id="navStaff">
+                    <span class="nav-icon">🏫</span> Staff
+                </button>
+                <button class="admin-nav-btn" data-section="logs" id="navLogs">
+                    <span class="nav-icon">📋</span> Attendance Logs
+                </button>
+                <button class="admin-nav-btn" data-section="system" id="navSystem">
+                    <span class="nav-icon">⚙️</span> System Info
+                </button>
+            </nav>
+
+            <div class="admin-sidebar-footer">
+                <button class="btn btn-ghost btn-sm btn-block" id="btnBackToKiosk">← Back to SFAM</button>
+                <button class="btn btn-danger btn-sm btn-block mt-1" id="btnSignOut">Sign Out</button>
             </div>
         </aside>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Students Section -->
-            <section id="section-students">
-                <div class="page-header">
-                    <h1>Registered Students</h1>
-                    <div class="search-box">
-                        <input type="text" id="studentSearch" placeholder="Search students..."
-                            oninput="filterStudents(this.value)">
-                    </div>
-                </div>
+        <!-- Main content -->
+        <div class="admin-main">
 
-                <div class="stats-grid mb-3">
-                    <div class="stat-card">
-                        <div class="stat-icon blue">👥</div>
-                        <div>
-                            <div class="stat-value" id="totalStudents">—</div>
+            <div class="admin-topbar">
+                <h3 id="adminTopbarTitle">Students</h3>
+                <span style="color:var(--text-muted);font-size:.85rem;">Logged in as <strong
+                        id="adminUsername">Admin</strong></span>
+            </div>
+
+            <div class="admin-content">
+
+                <!-- ================================================================
+           STUDENTS
+           ============================================================== -->
+                <div class="admin-section active" id="section-students">
+                    <div class="section-header">
+                        <h2>Registered Students</h2>
+                        <button class="btn btn-primary btn-sm" id="refreshStudents">↻ Refresh</button>
+                    </div>
+                    <div class="stats-grid" style="margin-bottom:1.25rem;">
+                        <div class="stat-card success-border">
                             <div class="stat-label">Total Students</div>
+                            <div class="stat-value" id="totalStudents">—</div>
                         </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon green">✓</div>
-                        <div>
-                            <div class="stat-value" id="avgAttendance">—</div>
+                        <div class="stat-card">
                             <div class="stat-label">Avg Attendance</div>
+                            <div class="stat-value" id="avgAttendance">—</div>
+                        </div>
+                        <div class="stat-card warning-border">
+                            <div class="stat-label">Below 75%</div>
+                            <div class="stat-value" id="belowThreshold">—</div>
                         </div>
                     </div>
-                </div>
-
-                <div class="card">
-                    <div class="table-container">
-                        <table>
+                    <div class="filter-row">
+                        <input type="text" id="studentSearch" placeholder="Search by name, email, roll no…"
+                            style="flex:1;min-width:180px;">
+                    </div>
+                    <div class="table-card">
+                        <table class="data-table">
                             <thead>
                                 <tr>
                                     <th>ID</th>
                                     <th>Name</th>
+                                    <th>Roll No</th>
+                                    <th>Dept / Year</th>
                                     <th>Email</th>
-                                    <th>Department</th>
                                     <th>Attendance</th>
-                                    <th>Registered</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="studentsTable">
                                 <tr>
-                                    <td colspan="6" class="text-center"
-                                        style="color:var(--text-secondary);padding:2rem;">Loading...</td>
+                                    <td colspan="7" class="text-center text-muted" style="padding:2rem;">Loading…</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
-            </section>
 
-            <!-- System Info Section -->
-            <section id="section-system" class="hidden">
-                <div class="page-header">
-                    <h1>System Information</h1>
-                </div>
-
-                <div class="stats-grid mb-3">
-                    <div class="stat-card">
-                        <div class="stat-icon blue">💻</div>
-                        <div>
-                            <div class="stat-value" id="sysOS">—</div>
-                            <div class="stat-label">Operating System</div>
-                        </div>
+                <!-- ================================================================
+           STAFF
+           ============================================================== -->
+                <div class="admin-section" id="section-staff">
+                    <div class="section-header">
+                        <h2>Registered Staff</h2>
+                        <button class="btn btn-primary btn-sm" id="refreshStaff">↻ Refresh</button>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon green">🐍</div>
-                        <div>
-                            <div class="stat-value" id="sysPython">—</div>
-                            <div class="stat-label">Python Version</div>
-                        </div>
+                    <div class="filter-row">
+                        <input type="text" id="staffSearch" placeholder="Search by name, code, dept…"
+                            style="flex:1;min-width:180px;">
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon orange">🎮</div>
-                        <div>
-                            <div class="stat-value" id="sysGPU">—</div>
-                            <div class="stat-label">GPU Device</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon purple">🧠</div>
-                        <div>
-                            <div class="stat-value" id="sysModel">—</div>
-                            <div class="stat-label">Model Status</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Full System Details</h3>
-                    </div>
-                    <div class="card-body">
-                        <table>
-                            <tbody id="sysDetailsTable">
+                    <div class="table-card">
+                        <table class="data-table">
+                            <thead>
                                 <tr>
-                                    <td colspan="2" class="text-center"
-                                        style="color:var(--text-secondary);padding:2rem;">Loading...</td>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Emp Code</th>
+                                    <th>Department</th>
+                                    <th>Email</th>
+                                    <th>Specialization</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="staffTable">
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted" style="padding:2rem;">Loading…</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
-            </section>
 
-            <!-- Attendance Marking Section -->
-            <section id="section-markAll" class="hidden">
-                <div class="page-header">
-                    <h1>Bulk Attendance</h1>
-                </div>
-                <div class="card">
-                    <div class="card-body">
-                        <div class="camera-container" id="adminCameraContainer">
-                            <video id="adminVideo" autoplay playsinline muted></video>
-                            <div class="camera-overlay">
-                                <div class="face-guide"></div>
-                            </div>
-                            <div class="recognition-result" id="adminRecResult">
-                                <span id="adminRecIcon">✓</span>
-                                <span id="adminRecText">—</span>
-                            </div>
-                        </div>
-                        <div class="camera-controls mt-2">
-                            <button id="adminCamBtn" class="btn btn-secondary" onclick="toggleAdminCamera()">
-                                📷 Start Camera
-                            </button>
-                            <button id="adminSnapBtn" class="btn btn-primary btn-lg" onclick="adminSnapAndRecognize()"
-                                disabled>
-                                ⚡ Recognize & Mark
-                            </button>
-                        </div>
+                <!-- ================================================================
+           ATTENDANCE LOGS
+           ============================================================== -->
+                <div class="admin-section" id="section-logs">
+                    <div class="section-header">
+                        <h2>Attendance Logs</h2>
+                        <button class="btn btn-primary btn-sm" id="refreshLogs">↻ Refresh</button>
+                    </div>
+                    <div class="filter-row">
+                        <input type="date" id="logsDateFilter">
+                        <button class="btn btn-primary btn-sm" id="btnFilterLogs">Filter</button>
+                        <button class="btn btn-outline btn-sm" id="btnClearLogsFilter">All Dates</button>
+                        <span id="logsTotalBadge" class="text-muted" style="font-size:.85rem;margin-left:auto;"></span>
+                    </div>
+                    <div class="table-card">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Student / Staff</th>
+                                    <th>Roll No / Emp</th>
+                                    <th>Role</th>
+                                    <th>Department</th>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logsTable">
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted" style="padding:2rem;">Loading…</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            </section>
-        </main>
+
+                <!-- ================================================================
+           SYSTEM INFO
+           ============================================================== -->
+                <div class="admin-section" id="section-system">
+                    <div class="section-header">
+                        <h2>System Information</h2>
+                        <button class="btn btn-primary btn-sm" id="refreshSystem">↻ Refresh</button>
+                    </div>
+                    <div class="stats-grid" style="margin-bottom:1.25rem;">
+                        <div class="stat-card">
+                            <div class="stat-label">Operating System</div>
+                            <div class="stat-value" style="font-size:1.1rem;" id="sysOS">—</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Python</div>
+                            <div class="stat-value" style="font-size:1.1rem;" id="sysPython">—</div>
+                        </div>
+                        <div class="stat-card success-border">
+                            <div class="stat-label">GPU Device</div>
+                            <div class="stat-value" style="font-size:1.1rem;" id="sysGPU">—</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Model Status</div>
+                            <div class="stat-value" style="font-size:1.1rem;" id="sysModel">—</div>
+                        </div>
+                    </div>
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h3 style="font-size:1rem;">Full Details</h3>
+                        </div>
+                        <table class="data-table">
+                            <tbody id="sysDetails">
+                                <tr>
+                                    <td colspan="2" class="text-center text-muted" style="padding:2rem;">Loading…</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div><!-- /admin-content -->
+        </div><!-- /admin-main -->
     </div>
 
-    <!-- Toast container -->
     <div class="toast-container" id="toastContainer"></div>
 
     <script src="js/api.js"></script>
-    <script src="js/camera.js"></script>
     <script src="js/app.js"></script>
     <script>
-        var allStudents = [];
-        var adminCameraActive = false;
-
         document.addEventListener('DOMContentLoaded', function () {
-            var session = getSession();
-            if (!session) {
-                window.location.href = 'index.html';
+
+            // -----------------------------------------------------------------------
+            // Auth guard — admin only
+            // -----------------------------------------------------------------------
+            var session = requireAuth();
+            if (!session) return;
+
+            if (session.user.role !== 'admin') {
+                showToast('Admin access required', 'error');
+                setTimeout(function () { redirectToDashboard(session.user.role); }, 1000);
                 return;
             }
 
-            if (session.role !== 'admin' && session.role !== 'staff') {
-                window.location.href = 'dashboard.html';
-                return;
-            }
+            document.getElementById('adminUsername').textContent = session.user.name;
 
-            document.getElementById('adminName').textContent = session.name;
-            document.getElementById('adminAvatar').textContent = session.name.charAt(0).toUpperCase();
+            // -----------------------------------------------------------------------
+            // Navigation
+            // -----------------------------------------------------------------------
+            var sectionTitles = {
+                students: 'Students', staff: 'Staff',
+                logs: 'Attendance Logs', system: 'System Info'
+            };
 
-            loadStudents();
-            loadSystemInfo();
-        });
-
-        async function loadStudents() {
-            try {
-                var data = await apiGetStudents();
-                allStudents = data.students || [];
-
-                document.getElementById('totalStudents').textContent = allStudents.length;
-
-                // Calculate average attendance
-                if (allStudents.length > 0) {
-                    var sumPct = allStudents.reduce(function (acc, s) {
-                        return acc + (s.stats ? s.stats.percentage : 0);
-                    }, 0);
-                    document.getElementById('avgAttendance').textContent =
-                        (sumPct / allStudents.length).toFixed(1) + '%';
-                }
-
-                renderStudentTable(allStudents);
-            } catch (err) {
-                showToast('Failed to load students', 'error');
-            }
-        }
-
-        function renderStudentTable(students) {
-            var tbody = document.getElementById('studentsTable');
-            if (students.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="color:var(--text-secondary);padding:2rem;">No students registered</td></tr>';
-                return;
-            }
-
-            var html = '';
-            students.forEach(function (s) {
-                var pct = s.stats ? s.stats.percentage : 0;
-                var badgeClass = pct >= 75 ? 'badge-success' : (pct >= 50 ? 'badge-warning' : 'badge-danger');
-                var dt = s.created_at ? new Date(s.created_at).toLocaleDateString() : '—';
-
-                html += '<tr>' +
-                    '<td>' + s.id + '</td>' +
-                    '<td>' + s.name + '</td>' +
-                    '<td>' + s.email + '</td>' +
-                    '<td>' + s.department + '</td>' +
-                    '<td><span class="badge ' + badgeClass + '">' + pct + '%</span></td>' +
-                    '<td>' + dt + '</td>' +
-                    '</tr>';
-            });
-            tbody.innerHTML = html;
-        }
-
-        function filterStudents(query) {
-            var q = query.toLowerCase();
-            var filtered = allStudents.filter(function (s) {
-                return s.name.toLowerCase().includes(q) ||
-                    s.email.toLowerCase().includes(q) ||
-                    s.department.toLowerCase().includes(q);
-            });
-            renderStudentTable(filtered);
-        }
-
-        async function loadSystemInfo() {
-            try {
-                var info = await apiGetSystemInfo();
-
-                document.getElementById('sysOS').textContent = info.os || '—';
-                document.getElementById('sysPython').textContent = info.python_version || '—';
-                document.getElementById('sysGPU').textContent = (info.gpu_device || 'cpu').toUpperCase();
-                document.getElementById('sysModel').textContent = info.model_ready ? 'Loaded' : 'Not Loaded';
-
-                var details = [
-                    ['Operating System', info.os + ' ' + (info.os_version || '').substring(0, 30)],
-                    ['Architecture', info.architecture],
-                    ['Python', info.python_version],
-                    ['GPU Device', (info.gpu_device || 'cpu').toUpperCase()],
-                    ['GPU Name', info.gpu_name],
-                    ['CUDA Available', info.cuda_available ? 'Yes' : 'No'],
-                    ['MPS Available', info.mps_available ? 'Yes' : 'No'],
-                    ['Model', info.model_name],
-                    ['Model Ready', info.model_ready ? 'Yes' : 'No'],
-                ];
-
-                var html = '';
-                details.forEach(function (d) {
-                    html += '<tr><td style="color:var(--text-secondary);width:180px;">' + d[0] + '</td><td>' + d[1] + '</td></tr>';
+            document.querySelectorAll('.admin-nav-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var sec = btn.dataset.section;
+                    document.querySelectorAll('.admin-nav-btn').forEach(function (b) {
+                        b.classList.remove('active');
+                    });
+                    btn.classList.add('active');
+                    document.querySelectorAll('.admin-section').forEach(function (s) {
+                        s.classList.remove('active');
+                    });
+                    document.getElementById('section-' + sec).classList.add('active');
+                    document.getElementById('adminTopbarTitle').textContent = sectionTitles[sec] || sec;
                 });
-                document.getElementById('sysDetailsTable').innerHTML = html;
-            } catch (err) {
-                showToast('Failed to load system info', 'error');
-            }
-        }
-
-        function showAdminSection(name, el) {
-            document.querySelectorAll('[id^="section-"]').forEach(function (s) {
-                s.classList.add('hidden');
             });
-            document.getElementById('section-' + name).classList.remove('hidden');
 
-            document.querySelectorAll('.sidebar-nav a').forEach(function (a) {
-                a.classList.remove('active');
+            document.getElementById('btnBackToKiosk').onclick = function () {
+                window.location.href = 'index.html';
+            };
+            document.getElementById('btnSignOut').onclick = function () {
+                clearSession();
+                window.location.href = 'index.html';
+            };
+
+            // -----------------------------------------------------------------------
+            // Students
+            // -----------------------------------------------------------------------
+            var allStudents = [];
+
+            async function loadStudents() {
+                var tbody = document.getElementById('studentsTable');
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:2rem;">Loading…</td></tr>';
+                try {
+                    var data = await apiAdminListUsers('student');
+                    allStudents = data.users || [];
+                    renderStudents(allStudents);
+
+                    var sumPct = allStudents.reduce(function (a, s) { return a + (s.stats ? s.stats.percentage : 0); }, 0);
+                    var below = allStudents.filter(function (s) { return s.stats && s.stats.percentage < 75; }).length;
+                    document.getElementById('totalStudents').textContent = allStudents.length;
+                    document.getElementById('avgAttendance').textContent = allStudents.length ? (sumPct / allStudents.length).toFixed(1) + '%' : '—';
+                    document.getElementById('belowThreshold').textContent = below;
+                } catch (e) { showToast('Failed to load students', 'error'); }
+            }
+
+            function renderStudents(list) {
+                var tbody = document.getElementById('studentsTable');
+                if (!list.length) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:2rem;">No students found</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = list.map(function (s) {
+                    var pct = s.stats ? s.stats.percentage : 0;
+                    var badge = pct >= 75 ? 'badge-success' : pct >= 50 ? 'badge-warning' : 'badge-danger';
+                    return '<tr>'
+                        + '<td>' + s.id + '</td>'
+                        + '<td style="font-weight:500;">' + s.name + '</td>'
+                        + '<td>' + (s.roll_no || '—') + '</td>'
+                        + '<td>' + (s.department || '—') + (s.year ? ' / ' + s.year : '') + '</td>'
+                        + '<td style="font-size:.82rem;">' + s.email + '</td>'
+                        + '<td><span class="badge ' + badge + '">' + pct + '%</span></td>'
+                        + '<td style="white-space:nowrap;">'
+                        + '<button class="btn btn-outline tbl-action" onclick="openEdit(' + s.id + ',\'student\')">✏ Edit</button> '
+                        + '<button class="btn btn-danger tbl-action" onclick="deleteUser(' + s.id + ',\'' + s.name.replace(/'/g, '') + '\')">🗑 Del</button>'
+                        + '</td></tr>';
+                }).join('');
+            }
+
+            document.getElementById('studentSearch').addEventListener('input', function () {
+                var q = this.value.toLowerCase();
+                renderStudents(allStudents.filter(function (s) {
+                    return (s.name + s.email + (s.roll_no || '') + (s.department || '')).toLowerCase().includes(q);
+                }));
             });
-            if (el) el.classList.add('active');
+            document.getElementById('refreshStudents').onclick = loadStudents;
 
-            // Stop camera when leaving
-            if (name !== 'markAll' && adminCameraActive) {
-                stopCamera();
-                adminCameraActive = false;
-                document.getElementById('adminCamBtn').textContent = '📷 Start Camera';
-                document.getElementById('adminSnapBtn').disabled = true;
+            // -----------------------------------------------------------------------
+            // Staff
+            // -----------------------------------------------------------------------
+            var allStaff = [];
+
+            async function loadStaff() {
+                var tbody = document.getElementById('staffTable');
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:2rem;">Loading…</td></tr>';
+                try {
+                    var data = await apiAdminListUsers('staff');
+                    allStaff = data.users || [];
+                    renderStaff(allStaff);
+                } catch (e) { showToast('Failed to load staff', 'error'); }
             }
 
-            document.getElementById('sidebar').classList.remove('open');
-        }
-
-        function toggleAdminCamera() {
-            if (adminCameraActive) {
-                stopCamera();
-                adminCameraActive = false;
-                document.getElementById('adminCamBtn').textContent = '📷 Start Camera';
-                document.getElementById('adminSnapBtn').disabled = true;
-            } else {
-                startCamera(document.getElementById('adminVideo'));
-                adminCameraActive = true;
-                document.getElementById('adminCamBtn').textContent = '⏹ Stop Camera';
-                document.getElementById('adminSnapBtn').disabled = false;
-            }
-        }
-
-        async function adminSnapAndRecognize() {
-            var btn = document.getElementById('adminSnapBtn');
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner"></span> Recognizing...';
-
-            var video = document.getElementById('adminVideo');
-            var frame = captureFrame(video);
-
-            if (!frame) {
-                showToast('Could not capture frame', 'error');
-                btn.disabled = false;
-                btn.textContent = '⚡ Recognize & Mark';
-                return;
+            function renderStaff(list) {
+                var tbody = document.getElementById('staffTable');
+                if (!list.length) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:2rem;">No staff found</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = list.map(function (s) {
+                    return '<tr>'
+                        + '<td>' + s.id + '</td>'
+                        + '<td style="font-weight:500;">' + s.name + '</td>'
+                        + '<td>' + (s.employee_code || '—') + '</td>'
+                        + '<td>' + (s.department || '—') + '</td>'
+                        + '<td style="font-size:.82rem;">' + s.email + '</td>'
+                        + '<td>' + (s.specialization || '—') + '</td>'
+                        + '<td style="white-space:nowrap;">'
+                        + '<button class="btn btn-outline tbl-action" onclick="openEdit(' + s.id + ',\'staff\')">✏ Edit</button> '
+                        + '<button class="btn btn-danger tbl-action" onclick="deleteUser(' + s.id + ',\'' + s.name.replace(/'/g, '') + '\')">🗑 Del</button>'
+                        + '</td></tr>';
+                }).join('');
             }
 
-            try {
-                var result = await apiRecognize(frame);
-                var recResult = document.getElementById('adminRecResult');
-                var recIcon = document.getElementById('adminRecIcon');
-                var recText = document.getElementById('adminRecText');
+            document.getElementById('staffSearch').addEventListener('input', function () {
+                var q = this.value.toLowerCase();
+                renderStaff(allStaff.filter(function (s) {
+                    return (s.name + s.email + (s.employee_code || '') + (s.department || '')).toLowerCase().includes(q);
+                }));
+            });
+            document.getElementById('refreshStaff').onclick = loadStaff;
 
-                if (result.error) {
-                    recResult.className = 'recognition-result active unmatched';
-                    recIcon.textContent = '✗';
-                    recText.textContent = result.error;
-                    showToast(result.error, 'error');
-                } else if (result.faces && result.faces.length > 0 && result.faces[0].matched) {
-                    var face = result.faces[0];
-                    recResult.className = 'recognition-result active matched';
-                    recIcon.textContent = '✓';
-                    recText.textContent = face.name + ' (' + (face.similarity * 100).toFixed(1) + '%)';
+            // -----------------------------------------------------------------------
+            // Attendance logs
+            // -----------------------------------------------------------------------
 
-                    var markResult = await apiMarkAttendance(face.user_id);
-                    showToast(markResult.message, 'success');
-                    loadStudents(); // Refresh stats
+            async function loadLogs(date) {
+                var tbody = document.getElementById('logsTable');
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:2rem;">Loading…</td></tr>';
+                try {
+                    var data = await apiAdminAttendanceLogs(date || null, 200);
+                    var logs = data.logs || [];
+                    document.getElementById('logsTotalBadge').textContent = logs.length + ' records' + (data.total > 200 ? ' (showing first 200 of ' + data.total + ')' : '');
+                    if (!logs.length) {
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:2rem;">No records found</td></tr>';
+                        return;
+                    }
+                    tbody.innerHTML = logs.map(function (l, i) {
+                        var badge = l.role === 'staff' ? 'badge-staff' : 'badge-info';
+                        return '<tr>'
+                            + '<td>' + (i + 1) + '</td>'
+                            + '<td style="font-weight:500;">' + l.name + '</td>'
+                            + '<td>' + (l.roll_no || l.employee_code || '—') + '</td>'
+                            + '<td><span class="badge ' + badge + '">' + l.role + '</span></td>'
+                            + '<td>' + (l.department || '—') + '</td>'
+                            + '<td>' + formatDate(l.timestamp) + '</td>'
+                            + '<td>' + formatTime(l.timestamp) + '</td>'
+                            + '</tr>';
+                    }).join('');
+                } catch (e) { showToast('Failed to load logs', 'error'); }
+            }
+
+            document.getElementById('btnFilterLogs').onclick = function () {
+                loadLogs(document.getElementById('logsDateFilter').value || null);
+            };
+            document.getElementById('btnClearLogsFilter').onclick = function () {
+                document.getElementById('logsDateFilter').value = '';
+                loadLogs(null);
+            };
+            document.getElementById('refreshLogs').onclick = function () {
+                loadLogs(document.getElementById('logsDateFilter').value || null);
+            };
+
+            // -----------------------------------------------------------------------
+            // System info
+            // -----------------------------------------------------------------------
+
+            async function loadSystemInfo() {
+                try {
+                    var info = await apiGetSystemInfo();
+                    document.getElementById('sysOS').textContent = info.os || '—';
+                    document.getElementById('sysPython').textContent = info.python_version || '—';
+                    document.getElementById('sysGPU').textContent = (info.gpu_device || 'CPU').toUpperCase();
+                    document.getElementById('sysModel').textContent = info.model_ready ? '✓ Loaded' : '✗ Not Loaded';
+
+                    var rows = [
+                        ['OS', info.os + ' ' + (info.os_version || '')],
+                        ['Architecture', info.architecture],
+                        ['Python Version', info.python_version],
+                        ['GPU Device', (info.gpu_device || 'CPU').toUpperCase()],
+                        ['GPU Name', info.gpu_name || '—'],
+                        ['CUDA Available', info.cuda_available ? 'Yes' : 'No'],
+                        ['MPS Available', info.mps_available ? 'Yes' : 'No'],
+                        ['Model Name', info.model_name || '—'],
+                        ['Model Ready', info.model_ready ? '✓ Yes' : '✗ No'],
+                    ];
+                    document.getElementById('sysDetails').innerHTML = rows.map(function (r) {
+                        return '<tr><td style="color:var(--text-muted);width:180px;font-size:.88rem;">' + r[0] + '</td>'
+                            + '<td style="font-weight:500;">' + r[1] + '</td></tr>';
+                    }).join('');
+                } catch (e) { showToast('Failed to load system info', 'error'); }
+            }
+
+            document.getElementById('refreshSystem').onclick = loadSystemInfo;
+
+            // -----------------------------------------------------------------------
+            // Delete user (P1)
+            // -----------------------------------------------------------------------
+            window.deleteUser = async function (userId, name) {
+                if (!confirm('Delete "' + name + '"? This removes all their attendance records and cannot be undone.')) return;
+                try {
+                    var res = await apiAdminDeleteUser(userId);
+                    if (res.error) { showToast(res.error, 'error'); return; }
+                    showToast(res.message, 'success');
+                    loadStudents();
+                    loadStaff();
+                } catch (e) { showToast('Delete failed', 'error'); }
+            };
+
+            // -----------------------------------------------------------------------
+            // Edit user (P1)
+            // -----------------------------------------------------------------------
+            var editRole = 'student';
+
+            window.openEdit = function (userId, role) {
+                editRole = role;
+                document.getElementById('editUserId').value = userId;
+                document.getElementById('editStudentFields').style.display = role === 'student' ? '' : 'none';
+                document.getElementById('editStaffFields').style.display = role === 'staff' ? '' : 'none';
+
+                // Pre-fill from cached list
+                var list = role === 'student' ? allStudents : allStaff;
+                var user = list.find(function (u) { return u.id === userId; });
+                if (user) {
+                    document.getElementById('editName').value = user.name || '';
+                    document.getElementById('editDept').value = user.department || '';
+                    if (role === 'student') {
+                        document.getElementById('editYear').value = user.year || '';
+                        document.getElementById('editCourse').value = user.course_opted || '';
+                    } else {
+                        document.getElementById('editSpec').value = user.specialization || '';
+                        document.getElementById('editCoursesTeaching').value = user.courses_teaching || '';
+                    }
+                }
+                document.getElementById('editModal').classList.add('open');
+            };
+
+            document.getElementById('closeEditModal').onclick = function () {
+                document.getElementById('editModal').classList.remove('open');
+            };
+
+            document.getElementById('saveEditBtn').addEventListener('click', async function () {
+                var userId = parseInt(document.getElementById('editUserId').value);
+                var fields = {
+                    name: document.getElementById('editName').value.trim(),
+                    department: document.getElementById('editDept').value.trim(),
+                };
+                if (editRole === 'student') {
+                    fields.year = document.getElementById('editYear').value.trim();
+                    fields.course_opted = document.getElementById('editCourse').value.trim();
                 } else {
-                    recResult.className = 'recognition-result active unmatched';
-                    recIcon.textContent = '?';
-                    recText.textContent = result.message || 'Face not recognized';
-                    showToast(result.message || 'Face not recognized', 'warning');
+                    fields.specialization = document.getElementById('editSpec').value.trim();
+                    fields.courses_teaching = document.getElementById('editCoursesTeaching').value.trim();
                 }
 
-                setTimeout(function () {
-                    recResult.classList.remove('active');
-                }, 5000);
+                setLoading(this, true, 'Saving…');
+                try {
+                    var res = await apiAdminEditUser(userId, fields);
+                    if (res.error) { showToast(res.error, 'error'); }
+                    else {
+                        showToast('User updated successfully', 'success');
+                        document.getElementById('editModal').classList.remove('open');
+                        loadStudents(); loadStaff();
+                    }
+                } catch (e) { showToast('Update failed', 'error'); }
+                setLoading(this, false, 'Save Changes');
+            });
 
-            } catch (err) {
-                showToast('Recognition failed: ' + err.message, 'error');
-            }
+            // -----------------------------------------------------------------------
+            // Initial data load
+            // -----------------------------------------------------------------------
+            loadStudents();
+            loadStaff();
+            loadLogs(null);
+            loadSystemInfo();
 
-            btn.disabled = false;
-            btn.textContent = '⚡ Recognize & Mark';
-        }
-
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('open');
-        }
+        });
     </script>
 </body>
 

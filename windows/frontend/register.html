@@ -1,256 +1,417 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Student Registration with Face Capture">
     <title>SFAM — Register</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
-    <div class="bg-animation"></div>
 
-    <div class="auth-container">
-        <div class="auth-card wide">
-            <div class="auth-header">
-                <div class="logo">📸</div>
-                <h1>Student Registration</h1>
-                <p>Create your account with face verification</p>
-            </div>
+    <div class="register-page">
+        <div style="width:100%;max-width:600px;">
 
-            <form id="registerForm" autocomplete="off">
-                <!-- Step 1: User Details -->
-                <div id="step1">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="regName">Full Name</label>
-                            <input type="text" id="regName" placeholder="John Doe" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="regEmail">Email Address</label>
-                            <input type="email" id="regEmail" placeholder="john@university.edu" required>
-                        </div>
+            <button class="auth-back" id="btnBack">← Back to Kiosk</button>
+
+            <div class="register-card">
+
+                <!-- Header -->
+                <div class="register-header">
+                    <h2 id="regTitle">Register New Student</h2>
+                    <p id="regSubtitle">Complete your details, then we'll scan your face</p>
+                    <div class="phase-indicator">
+                        <div class="phase-dot active" id="phDot1"></div>
+                        <div class="phase-dot" id="phDot2"></div>
+                        <div class="phase-dot" id="phDot3"></div>
                     </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="regDepartment">Department</label>
-                            <select id="regDepartment">
-                                <option value="CS">Computer Science</option>
-                                <option value="EC">Electronics</option>
-                                <option value="ME">Mechanical</option>
-                                <option value="CE">Civil</option>
-                                <option value="EE">Electrical</option>
-                                <option value="Other">Other</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="regPassword">Password</label>
-                            <input type="password" id="regPassword" placeholder="Min 4 characters" required>
-                        </div>
-                    </div>
-
-                    <button type="button" id="toStep2Btn" class="btn btn-primary btn-block" onclick="goToStep2()">
-                        Next — Face Capture →
-                    </button>
                 </div>
 
-                <!-- Step 2: Face Capture -->
-                <div id="step2" class="hidden">
-                    <div class="camera-container" id="regCameraContainer">
-                        <video id="regVideo" autoplay playsinline muted></video>
-                        <div class="camera-overlay">
-                            <div class="face-guide"></div>
-                        </div>
-                        <div class="recording-indicator" id="recIndicator">
-                            ● REC
-                        </div>
-                        <div class="countdown-overlay" id="countdown">
-                            <span class="countdown-number" id="countdownNum">3</span>
-                        </div>
-                    </div>
+                <div class="register-body">
 
-                    <div class="text-center mt-2" style="color: var(--text-secondary); font-size: 0.85rem;">
-                        <p>Position your face within the oval guide.</p>
-                        <p>A 5-second video will be captured for face registration.</p>
-                    </div>
-
-                    <div class="camera-controls mt-2">
-                        <button type="button" id="backBtn" class="btn btn-secondary" onclick="goToStep1()">
-                            ← Back
+                    <!-- ================================================================
+             PHASE 1: Role selection
+             ============================================================= -->
+                    <div id="phase1">
+                        <p class="text-muted mb-2">I am registering as a…</p>
+                        <div class="role-tabs" style="margin-bottom:1.5rem;">
+                            <button class="role-tab active" id="roleStudent">Student</button>
+                            <button class="role-tab" id="roleStaff">Staff</button>
+                        </div>
+                        <button class="btn btn-primary btn-block btn-lg" id="btnPhase1Next">
+                            Continue →
                         </button>
-                        <button type="button" id="captureBtn" class="btn btn-primary btn-lg" onclick="startCapture()">
-                            📸 Start Face Capture
-                        </button>
-                    </div>
-
-                    <!-- Progress bar during processing -->
-                    <div id="processingBar" class="hidden mt-2">
-                        <div style="background: var(--bg-glass); border-radius: 4px; height: 6px; overflow: hidden;">
-                            <div id="progressFill" style="height: 100%; background: linear-gradient(90deg, var(--accent-start), var(--accent-end)); width: 0%; transition: width 0.3s;"></div>
-                        </div>
-                        <p id="processingText" class="text-center mt-1" style="color: var(--text-secondary); font-size: 0.85rem;">
-                            Processing frames...
+                        <p class="text-center mt-2" style="font-size:.85rem;color:var(--text-muted);">
+                            Already registered? <a id="goLogin" href="login.html">Sign in</a>
                         </p>
                     </div>
-                </div>
-            </form>
 
-            <div class="text-center mt-3">
-                <p style="color: var(--text-secondary); font-size: 0.9rem;">
-                    Already registered?
-                    <a href="index.html">Sign in</a>
-                </p>
-            </div>
+                    <!-- ================================================================
+             PHASE 2a: Student form
+             ============================================================= -->
+                    <div id="phase2Student" class="hidden">
+                        <form id="studentForm" autocomplete="off">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Full Name *</label>
+                                    <input type="text" id="sName" placeholder="e.g. Arun Kumar" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Email *</label>
+                                    <input type="email" id="sEmail" placeholder="you@college.edu" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Roll Number *</label>
+                                    <input type="text" id="sRollNo" placeholder="e.g. CSE21001" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Registration Number *</label>
+                                    <input type="text" id="sRegNo" placeholder="e.g. 2021CS1001" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Department *</label>
+                                    <select id="sDept" required>
+                                        <option value="">Select Department</option>
+                                        <option>Computer Science</option>
+                                        <option>Electronics</option>
+                                        <option>Mechanical</option>
+                                        <option>Civil</option>
+                                        <option>Information Technology</option>
+                                        <option>Electrical</option>
+                                        <option>Mathematics</option>
+                                        <option>Physics</option>
+                                        <option>Chemistry</option>
+                                        <option>Other</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Current Year *</label>
+                                    <select id="sYear" required>
+                                        <option value="">Select Year</option>
+                                        <option>1st Year</option>
+                                        <option>2nd Year</option>
+                                        <option>3rd Year</option>
+                                        <option>4th Year</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Course / Programme *</label>
+                                <input type="text" id="sCourse" placeholder="e.g. B.Tech CSE" required>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Password *</label>
+                                    <input type="password" id="sPassword" placeholder="Min. 4 characters" required
+                                        minlength="4">
+                                </div>
+                                <div class="form-group">
+                                    <label>Confirm Password *</label>
+                                    <input type="password" id="sConfirm" placeholder="Re-enter password" required>
+                                </div>
+                            </div>
+                            <div style="display:flex;gap:1rem;margin-top:.5rem;">
+                                <button type="button" class="btn btn-outline" id="sBack">← Back</button>
+                                <button type="submit" class="btn btn-primary" style="flex:1;" id="sNext">
+                                    Save & Scan Face →
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- ================================================================
+             PHASE 2b: Staff form
+             ============================================================= -->
+                    <div id="phase2Staff" class="hidden">
+                        <form id="staffForm" autocomplete="off">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Full Name *</label>
+                                    <input type="text" id="tfName" placeholder="e.g. Dr. Priya Nair" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Email *</label>
+                                    <input type="email" id="tfEmail" placeholder="staff@college.edu" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Employee Code *</label>
+                                    <input type="text" id="tfEmpCode" placeholder="e.g. EMP-2024-001" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Department *</label>
+                                    <select id="tfDept" required>
+                                        <option value="">Select Department</option>
+                                        <option>Computer Science</option>
+                                        <option>Electronics</option>
+                                        <option>Mechanical</option>
+                                        <option>Civil</option>
+                                        <option>Information Technology</option>
+                                        <option>Electrical</option>
+                                        <option>Mathematics</option>
+                                        <option>Physics</option>
+                                        <option>Chemistry</option>
+                                        <option>Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Specialization</label>
+                                <input type="text" id="tfSpec" placeholder="e.g. Machine Learning, Computer Vision">
+                            </div>
+                            <div class="form-group">
+                                <label>Courses Teaching</label>
+                                <input type="text" id="tfCourses" placeholder="e.g. CS301, CS401 (comma-separated)">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Password *</label>
+                                    <input type="password" id="tfPassword" placeholder="Min. 4 characters" required
+                                        minlength="4">
+                                </div>
+                                <div class="form-group">
+                                    <label>Confirm Password *</label>
+                                    <input type="password" id="tfConfirm" placeholder="Re-enter password" required>
+                                </div>
+                            </div>
+                            <div style="display:flex;gap:1rem;margin-top:.5rem;">
+                                <button type="button" class="btn btn-outline" id="tfBack">← Back</button>
+                                <button type="submit" class="btn btn-primary" style="flex:1;" id="tfNext">
+                                    Save & Scan Face →
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- ================================================================
+             PHASE 3: Face capture
+             ============================================================= -->
+                    <div id="phase3" class="hidden">
+                        <p class="text-muted mb-2">
+                            Position your face clearly in the frame. Keep still. Capture takes ~4 seconds.
+                        </p>
+
+                        <div class="capture-area">
+                            <video id="regVideo" autoplay playsinline muted></video>
+                            <canvas id="regCanvas"></canvas>
+                            <span class="capture-overlay-text" id="captureLabel">Press button to begin</span>
+                        </div>
+
+                        <div class="progress-bar-wrap">
+                            <div class="progress-bar-fill" id="progressBar"></div>
+                        </div>
+                        <p class="text-muted text-center mb-2" id="progressText" style="font-size:.82rem;">0 / 10 frames
+                            captured</p>
+
+                        <div style="display:flex;gap:1rem;">
+                            <button class="btn btn-outline" id="p3Back">← Back</button>
+                            <button class="btn btn-primary" style="flex:1;" id="btnCapture">
+                                📷 Start Face Scan
+                            </button>
+                        </div>
+                    </div>
+
+                </div><!-- /register-body -->
+            </div><!-- /register-card -->
         </div>
     </div>
 
-    <!-- Toast container -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <!-- Loading overlay -->
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="spinner spinner-lg"></div>
-        <p style="color: var(--text-secondary);">Registering your face...</p>
-    </div>
-
     <script src="js/api.js"></script>
-    <script src="js/camera.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/camera.js"></script>
     <script>
-        var capturedFrames = [];
+        document.addEventListener('DOMContentLoaded', function () {
 
-        function goToStep2() {
-            var name = document.getElementById('regName').value.trim();
-            var email = document.getElementById('regEmail').value.trim();
-            var password = document.getElementById('regPassword').value;
+            var params = new URLSearchParams(location.search);
+            var defaultRole = params.get('role') || 'student';
+            var selectedRole = defaultRole;
+            var formData = {};
+            var currentPhase = 1;
 
-            if (!name || !email || !password) {
-                showToast('Please fill in all fields', 'warning');
-                return;
-            }
-            if (password.length < 4) {
-                showToast('Password must be at least 4 characters', 'warning');
-                return;
-            }
+            // Redirect logged-in users
+            var s = getSession();
+            if (s) { redirectToDashboard(s.user.role); return; }
 
-            document.getElementById('step1').classList.add('hidden');
-            document.getElementById('step2').classList.remove('hidden');
+            document.getElementById('btnBack').onclick = function () { window.location.href = 'index.html'; };
 
-            // Start camera
-            startCamera(document.getElementById('regVideo'));
-        }
-
-        function goToStep1() {
-            stopCamera();
-            document.getElementById('step2').classList.add('hidden');
-            document.getElementById('step1').classList.remove('hidden');
-        }
-
-        async function startCapture() {
-            var btn = document.getElementById('captureBtn');
-            btn.disabled = true;
-            capturedFrames = [];
-
-            // Countdown 3-2-1
-            var countdownEl = document.getElementById('countdown');
-            var countdownNum = document.getElementById('countdownNum');
-            countdownEl.classList.add('active');
-
-            for (var i = 3; i >= 1; i--) {
-                countdownNum.textContent = i;
-                countdownNum.style.animation = 'none';
-                void countdownNum.offsetHeight; // trigger reflow
-                countdownNum.style.animation = 'countPop 1s ease-out';
-                await sleep(1000);
-            }
-            countdownEl.classList.remove('active');
-
-            // Show recording indicator
-            document.getElementById('recIndicator').classList.add('active');
-
-            // Capture frames over 5 seconds (~3 frames per second)
-            var duration = 5000;
-            var interval = 333; // ~3 fps
-            var elapsed = 0;
-            var video = document.getElementById('regVideo');
-
-            return new Promise(function(resolve) {
-                var timer = setInterval(function() {
-                    var frame = captureFrame(video);
-                    if (frame) {
-                        capturedFrames.push(frame);
-                    }
-                    elapsed += interval;
-
-                    if (elapsed >= duration) {
-                        clearInterval(timer);
-                        document.getElementById('recIndicator').classList.remove('active');
-                        resolve();
-                    }
-                }, interval);
-            }).then(function() {
-                submitRegistration();
-            });
-        }
-
-        async function submitRegistration() {
-            if (capturedFrames.length < 3) {
-                showToast('Not enough frames captured. Please try again.', 'error');
-                document.getElementById('captureBtn').disabled = false;
-                return;
+            // -----------------------------------------------------------------------
+            // Phase dots helper
+            // -----------------------------------------------------------------------
+            function setPhaseDots(phase) {
+                [1, 2, 3].forEach(function (i) {
+                    var dot = document.getElementById('phDot' + i);
+                    dot.className = 'phase-dot ' + (i < phase ? 'complete' : i === phase ? 'active' : '');
+                });
             }
 
-            // Show processing state
-            document.getElementById('processingBar').classList.remove('hidden');
-            document.getElementById('loadingOverlay').classList.add('active');
+            // -----------------------------------------------------------------------
+            // Phase 1 — role selection
+            // -----------------------------------------------------------------------
+            function setRole(role) {
+                selectedRole = role;
+                document.getElementById('roleStudent').classList.toggle('active', role === 'student');
+                document.getElementById('roleStaff').classList.toggle('active', role === 'staff');
+                document.getElementById('regTitle').textContent = role === 'staff'
+                    ? 'Register New Staff' : 'Register New Student';
+                document.getElementById('goLogin').href = 'login.html?role=' + role;
+            }
 
-            var progressFill = document.getElementById('progressFill');
-            progressFill.style.width = '30%';
+            setRole(defaultRole);
+            document.getElementById('roleStudent').onclick = function () { setRole('student'); };
+            document.getElementById('roleStaff').onclick = function () { setRole('staff'); };
 
-            var data = {
-                name: document.getElementById('regName').value.trim(),
-                email: document.getElementById('regEmail').value.trim().toLowerCase(),
-                department: document.getElementById('regDepartment').value,
-                password: document.getElementById('regPassword').value,
-                frames: capturedFrames,
+            document.getElementById('btnPhase1Next').onclick = function () {
+                document.getElementById('phase1').classList.add('hidden');
+                if (selectedRole === 'student') {
+                    document.getElementById('phase2Student').classList.remove('hidden');
+                } else {
+                    document.getElementById('phase2Staff').classList.remove('hidden');
+                }
+                setPhaseDots(2);
+                currentPhase = 2;
             };
 
-            progressFill.style.width = '60%';
+            // -----------------------------------------------------------------------
+            // Phase 2 — forms
+            // -----------------------------------------------------------------------
+            document.getElementById('sBack').onclick = function () { goToPhase1(); };
+            document.getElementById('tfBack').onclick = function () { goToPhase1(); };
 
-            try {
-                var result = await apiRegister(data);
-                progressFill.style.width = '100%';
-
-                document.getElementById('loadingOverlay').classList.remove('active');
-
-                if (result.error) {
-                    showToast(result.error, 'error');
-                    document.getElementById('captureBtn').disabled = false;
-                    document.getElementById('processingBar').classList.add('hidden');
-                    return;
-                }
-
-                // Success!
-                saveSession(result.token, result.user);
-                showToast(result.message || 'Registration successful!', 'success');
-
-                stopCamera();
-                setTimeout(function() {
-                    redirectToDashboard('student');
-                }, 1500);
-
-            } catch (err) {
-                document.getElementById('loadingOverlay').classList.remove('active');
-                document.getElementById('processingBar').classList.add('hidden');
-                showToast('Registration failed: ' + err.message, 'error');
-                document.getElementById('captureBtn').disabled = false;
+            function goToPhase1() {
+                document.getElementById('phase2Student').classList.add('hidden');
+                document.getElementById('phase2Staff').classList.add('hidden');
+                document.getElementById('phase1').classList.remove('hidden');
+                setPhaseDots(1);
+                currentPhase = 1;
             }
-        }
 
-        function sleep(ms) {
-            return new Promise(function(resolve) { setTimeout(resolve, ms); });
-        }
+            // Student form submit
+            document.getElementById('studentForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+                var pw1 = document.getElementById('sPassword').value;
+                var pw2 = document.getElementById('sConfirm').value;
+                if (pw1 !== pw2) { showToast('Passwords do not match', 'error'); return; }
+
+                formData = {
+                    name: document.getElementById('sName').value.trim(),
+                    email: document.getElementById('sEmail').value.trim().toLowerCase(),
+                    roll_no: document.getElementById('sRollNo').value.trim(),
+                    reg_no: document.getElementById('sRegNo').value.trim(),
+                    department: document.getElementById('sDept').value,
+                    year: document.getElementById('sYear').value,
+                    course_opted: document.getElementById('sCourse').value.trim(),
+                    password: pw1,
+                };
+                goToPhase3();
+            });
+
+            // Staff form submit
+            document.getElementById('staffForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+                var pw1 = document.getElementById('tfPassword').value;
+                var pw2 = document.getElementById('tfConfirm').value;
+                if (pw1 !== pw2) { showToast('Passwords do not match', 'error'); return; }
+
+                formData = {
+                    name: document.getElementById('tfName').value.trim(),
+                    email: document.getElementById('tfEmail').value.trim().toLowerCase(),
+                    employee_code: document.getElementById('tfEmpCode').value.trim(),
+                    department: document.getElementById('tfDept').value,
+                    specialization: document.getElementById('tfSpec').value.trim(),
+                    courses_teaching: document.getElementById('tfCourses').value.trim(),
+                    password: pw1,
+                };
+                goToPhase3();
+            });
+
+            // -----------------------------------------------------------------------
+            // Phase 3 — face capture
+            // -----------------------------------------------------------------------
+            var camStarted = false;
+
+            function goToPhase3() {
+                document.getElementById('phase2Student').classList.add('hidden');
+                document.getElementById('phase2Staff').classList.add('hidden');
+                document.getElementById('phase3').classList.remove('hidden');
+                setPhaseDots(3);
+                currentPhase = 3;
+
+                if (!camStarted) {
+                    RegCamera.start('regVideo', 'regCanvas').then(function (ok) {
+                        camStarted = ok;
+                        if (!ok) showToast('Camera access denied', 'error');
+                    });
+                }
+            }
+
+            document.getElementById('p3Back').onclick = function () {
+                document.getElementById('phase3').classList.add('hidden');
+                if (selectedRole === 'student') {
+                    document.getElementById('phase2Student').classList.remove('hidden');
+                } else {
+                    document.getElementById('phase2Staff').classList.remove('hidden');
+                }
+                setPhaseDots(2);
+                currentPhase = 2;
+            };
+
+            document.getElementById('btnCapture').addEventListener('click', async function () {
+                var btn = document.getElementById('btnCapture');
+                btn.disabled = true;
+                document.getElementById('captureLabel').textContent = 'Hold still…';
+
+                try {
+                    var frames = await RegCamera.captureFrames(10, 4000, function (cur, total) {
+                        var pct = (cur / total) * 100;
+                        document.getElementById('progressBar').style.width = pct + '%';
+                        document.getElementById('progressText').textContent = cur + ' / ' + total + ' frames captured';
+                        document.getElementById('captureLabel').textContent = 'Scanning… ' + cur + '/' + total;
+                    });
+
+                    document.getElementById('captureLabel').textContent = 'Processing…';
+                    btn.innerHTML = '<span class="spinner"></span> Registering…';
+
+                    var payload = Object.assign({}, formData, { frames: frames });
+                    var result;
+
+                    if (selectedRole === 'student') {
+                        result = await apiRegisterStudent(payload);
+                    } else {
+                        result = await apiRegisterStaff(payload);
+                    }
+
+                    if (result.error) {
+                        showToast(result.error, 'error');
+                        btn.disabled = false;
+                        btn.textContent = '📷 Retry Scan';
+                        document.getElementById('captureLabel').textContent = 'Scan failed — try again';
+                        document.getElementById('progressBar').style.width = '0%';
+                        document.getElementById('progressText').textContent = '0 / 10 frames captured';
+                        return;
+                    }
+
+                    RegCamera.stop();
+                    saveSession(result.token, result.user);
+                    showToast('Registration complete! Welcome, ' + result.user.name, 'success', 2000);
+                    setTimeout(function () { redirectToDashboard(result.user.role); }, 1200);
+
+                } catch (err) {
+                    showToast('Registration failed. Please try again.', 'error');
+                    btn.disabled = false;
+                    btn.textContent = '📷 Retry Scan';
+                }
+            });
+
+        });
     </script>
 </body>
+
 </html>

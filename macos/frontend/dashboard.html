@@ -4,435 +4,194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Student Dashboard — Attendance & Analytics">
-    <title>SFAM — Dashboard</title>
+    <title>SFAM — Student Dashboard</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 
-<body>
-    <div class="bg-animation"></div>
+<body class="dash-layout">
 
-    <button class="mobile-menu-btn" id="menuBtn" onclick="toggleSidebar()">☰</button>
+    <!-- Top bar -->
+    <header class="dash-topbar">
+        <div class="dash-topbar-brand">🎓 Facial Attendance System</div>
+        <div class="dash-topbar-user">
+            <span id="topbarName">Loading…</span>
+            <button class="btn btn-ghost btn-sm" id="btnLogout">Sign Out</button>
+        </div>
+    </header>
 
-    <div class="dashboard-layout">
-        <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-brand">
-                <span class="logo">🎓</span>
-                <h3>SFAM</h3>
+    <main class="dash-content">
+
+        <!-- Profile card -->
+        <div class="profile-card" id="profileCard">
+            <div class="profile-avatar">👤</div>
+            <div>
+                <div class="profile-name" id="profileName">—</div>
+                <div class="profile-meta" id="profileMeta"></div>
             </div>
+        </div>
 
-            <ul class="sidebar-nav">
-                <li><a href="#overview" class="active" onclick="showSection('overview', this)">📊 Overview</a></li>
-                <li><a href="#attendance" onclick="showSection('attendance', this)">📋 Attendance</a></li>
-                <li><a href="#markAttendance" onclick="showSection('markAttendance', this)">📸 Mark Attendance</a></li>
-                <li><a href="#courses" onclick="showSection('courses', this)">📚 Courses</a></li>
-            </ul>
-
-            <div class="sidebar-user">
-                <div class="sidebar-user-info">
-                    <div class="sidebar-user-avatar" id="userAvatar">?</div>
-                    <div>
-                        <div class="sidebar-user-name" id="userName">Loading...</div>
-                        <div class="sidebar-user-role" id="userRole">student</div>
-                    </div>
-                </div>
-                <button class="btn btn-secondary btn-sm btn-block" onclick="logout()">
-                    Sign Out
-                </button>
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card success-border">
+                <div class="stat-label">Attendance %</div>
+                <div class="stat-value" id="statPct">—</div>
+                <div class="stat-sub" id="statPctSub"></div>
             </div>
-        </aside>
+            <div class="stat-card">
+                <div class="stat-label">Days Present</div>
+                <div class="stat-value" id="statDays">—</div>
+                <div class="stat-sub" id="statDaysSub"></div>
+            </div>
+            <div class="stat-card warning-border">
+                <div class="stat-label">Total Hours</div>
+                <div class="stat-value" id="statHours">—</div>
+                <div class="stat-sub">sessions recorded</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Working Days</div>
+                <div class="stat-value" id="statTotal">—</div>
+                <div class="stat-sub">since enrollment</div>
+            </div>
+        </div>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Overview Section -->
-            <section id="section-overview">
-                <div class="page-header">
-                    <h1>Dashboard</h1>
-                    <span class="badge badge-info" id="dateDisplay"></span>
-                </div>
+        <!-- Charts row -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="card-title">Weekly Attendance (Last 7 Days)</div>
+                <canvas id="barChart" style="width:100%;height:180px;"></canvas>
+            </div>
+            <div class="chart-card"
+                style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                <div class="card-title" style="width:100%;">Attendance Rate</div>
+                <div id="attendanceRing" class="attendance-ring"></div>
+            </div>
+        </div>
 
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon blue">📊</div>
-                        <div>
-                            <div class="stat-value" id="statPercentage">—</div>
-                            <div class="stat-label">Attendance %</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon green">⏱</div>
-                        <div>
-                            <div class="stat-value" id="statHours">—</div>
-                            <div class="stat-label">Total Hours</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon orange">📅</div>
-                        <div>
-                            <div class="stat-value" id="statPresent">—</div>
-                            <div class="stat-label">Days Present</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon purple">📆</div>
-                        <div>
-                            <div class="stat-value" id="statTotal">—</div>
-                            <div class="stat-label">Total Days</div>
-                        </div>
-                    </div>
-                </div>
+        <!-- Recent attendance table -->
+        <div class="table-card">
+            <div class="table-card-header">
+                <h3 style="font-size:1rem;">Recent Attendance</h3>
+                <span class="text-muted" style="font-size:.85rem;" id="recentCount"></span>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="attendanceBody">
+                    <tr>
+                        <td colspan="4" class="text-center text-muted" style="padding:2rem;">Loading…</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
-                <div class="charts-grid">
-                    <div class="chart-card">
-                        <div class="card-header">
-                            <h3>Attendance Rate</h3>
-                        </div>
-                        <div class="progress-ring-container">
-                            <div class="progress-ring">
-                                <canvas id="progressCanvas" width="140" height="140"></canvas>
-                                <div class="progress-ring-label">
-                                    <span class="progress-ring-value" id="ringValue">—</span>
-                                    <span class="progress-ring-text">attendance</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="chart-card">
-                        <div class="card-header">
-                            <h3>Weekly Activity</h3>
-                        </div>
-                        <canvas id="weeklyChart" width="400" height="250"></canvas>
-                    </div>
-                </div>
+    </main>
 
-                <!-- User Info Card -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Student Information</h3>
-                    </div>
-                    <div class="card-body">
-                        <table>
-                            <tbody>
-                                <tr>
-                                    <td style="color:var(--text-secondary);width:140px;">Name</td>
-                                    <td id="infoName">—</td>
-                                </tr>
-                                <tr>
-                                    <td style="color:var(--text-secondary);">Email</td>
-                                    <td id="infoEmail">—</td>
-                                </tr>
-                                <tr>
-                                    <td style="color:var(--text-secondary);">Department</td>
-                                    <td id="infoDept">—</td>
-                                </tr>
-                                <tr>
-                                    <td style="color:var(--text-secondary);">Role</td>
-                                    <td id="infoRole">—</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Attendance History Section -->
-            <section id="section-attendance" class="hidden">
-                <div class="page-header">
-                    <h1>Attendance History</h1>
-                </div>
-                <div class="card">
-                    <div class="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Date</th>
-                                    <th>Time</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="attendanceTable">
-                                <tr>
-                                    <td colspan="4" class="text-center"
-                                        style="color:var(--text-secondary);padding:2rem;">Loading...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Mark Attendance Section -->
-            <section id="section-markAttendance" class="hidden">
-                <div class="page-header">
-                    <h1>Mark Attendance</h1>
-                </div>
-                <div class="card">
-                    <div class="card-body">
-                        <div class="camera-container" id="dashCameraContainer">
-                            <video id="dashVideo" autoplay playsinline muted></video>
-                            <div class="camera-overlay">
-                                <div class="face-guide"></div>
-                            </div>
-                            <div class="recognition-result" id="recResult">
-                                <span id="recIcon">✓</span>
-                                <span id="recText">—</span>
-                            </div>
-                        </div>
-                        <div class="camera-controls mt-2">
-                            <button id="startCamBtn" class="btn btn-secondary" onclick="toggleDashCamera()">
-                                📷 Start Camera
-                            </button>
-                            <button id="snapBtn" class="btn btn-primary btn-lg" onclick="snapAndRecognize()" disabled>
-                                ⚡ Recognize & Mark
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Courses Section -->
-            <section id="section-courses" class="hidden">
-                <div class="page-header">
-                    <h1>Courses</h1>
-                </div>
-                <div class="card">
-                    <div class="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Code</th>
-                                    <th>Course Name</th>
-                                    <th>Department</th>
-                                    <th>Total Hours</th>
-                                </tr>
-                            </thead>
-                            <tbody id="coursesTable">
-                                <tr>
-                                    <td colspan="4" class="text-center"
-                                        style="color:var(--text-secondary);padding:2rem;">Loading...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
-        </main>
-    </div>
-
-    <!-- Toast container -->
     <div class="toast-container" id="toastContainer"></div>
 
     <script src="js/api.js"></script>
-    <script src="js/camera.js"></script>
-    <script src="js/charts.js"></script>
     <script src="js/app.js"></script>
     <script>
-        var dashCameraActive = false;
+        document.addEventListener('DOMContentLoaded', async function () {
 
-        document.addEventListener('DOMContentLoaded', function () {
-            var session = getSession();
-            if (!session) {
-                window.location.href = 'index.html';
+            var s = requireAuth();
+            if (!s) return;
+
+            // Staff accidentally landing here
+            if (s.user.role === 'staff' || s.user.role === 'admin') {
+                window.location.href = 'staff.html';
                 return;
             }
 
-            // Set date
-            document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString('en-US', {
-                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-            });
+            document.getElementById('topbarName').textContent = s.user.name;
+            document.getElementById('btnLogout').onclick = function () {
+                clearSession();
+                window.location.href = 'index.html';
+            };
 
-            // Set user info in sidebar
-            document.getElementById('userName').textContent = session.name;
-            document.getElementById('userRole').textContent = session.role;
-            document.getElementById('userAvatar').textContent = session.name.charAt(0).toUpperCase();
-
-            loadDashboard(session.id);
-        });
-
-        async function loadDashboard(userId) {
             try {
-                var data = await apiGetDashboard(userId);
+                var data = await apiStudentDashboard(s.user.id);
+
                 if (data.error) {
                     showToast(data.error, 'error');
                     return;
                 }
 
+                var u = data.user;
+                var st = data.stats;
+
+                // Profile
+                document.getElementById('profileName').textContent = u.name;
+                var badges = [
+                    u.roll_no ? ('Roll No: ' + u.roll_no) : null,
+                    u.department ? u.department : null,
+                    u.year ? u.year : null,
+                    u.course_opted ? u.course_opted : null,
+                    u.email ? u.email : null,
+                ].filter(Boolean);
+                document.getElementById('profileMeta').innerHTML = badges
+                    .map(function (b) { return '<span class="profile-badge">' + b + '</span>'; })
+                    .join('');
+
                 // Stats
-                document.getElementById('statPercentage').textContent = data.stats.percentage + '%';
-                document.getElementById('statHours').textContent = data.stats.total_hours;
-                document.getElementById('statPresent').textContent = data.stats.present_days;
-                document.getElementById('statTotal').textContent = data.stats.total_days;
+                var colorClass = st.percentage >= 75 ? '' : st.percentage >= 50 ? 'warning-border' : 'danger-border';
+                document.querySelector('.stat-card.success-border').className = 'stat-card ' + colorClass;
+                document.getElementById('statPct').textContent = st.percentage + '%';
+                document.getElementById('statPctSub').textContent = st.percentage >= 75 ? 'Good standing ✓' : st.percentage >= 50 ? 'Needs improvement' : 'Below threshold ⚠';
+                document.getElementById('statDays').textContent = st.present_days;
+                document.getElementById('statDaysSub').textContent = 'out of ' + st.total_days + ' working days';
+                document.getElementById('statHours').textContent = st.total_hours;
+                document.getElementById('statTotal').textContent = st.total_days;
 
-                // User info
-                document.getElementById('infoName').textContent = data.user.name;
-                document.getElementById('infoEmail').textContent = data.user.email;
-                document.getElementById('infoDept').textContent = data.user.department;
-                document.getElementById('infoRole').textContent = data.user.department ? data.user.department : 'Student';
+                // Attendance ring
+                drawAttendanceRing('attendanceRing', st.percentage);
 
-                // Charts
-                document.getElementById('ringValue').textContent = data.stats.percentage + '%';
-                drawCircularProgress(document.getElementById('progressCanvas'), data.stats.percentage);
-                drawBarChart(document.getElementById('weeklyChart'), data.weekly || []);
-
-                // Courses
-                renderCourses(data.courses || []);
-
-                // Attendance records
-                loadAttendanceHistory(userId);
-
-            } catch (err) {
-                showToast('Failed to load dashboard', 'error');
-            }
-        }
-
-        async function loadAttendanceHistory(userId) {
-            try {
-                var data = await apiGetAttendance(userId);
-                var tbody = document.getElementById('attendanceTable');
-
-                if (!data.records || data.records.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" class="text-center" style="color:var(--text-secondary);padding:2rem;">No attendance records yet</td></tr>';
-                    return;
+                // Bar chart (weekly)
+                var weekly = data.weekly || [];
+                var today = new Date();
+                var labels = [], values = [];
+                for (var i = 6; i >= 0; i--) {
+                    var d = new Date(today);
+                    d.setDate(today.getDate() - i);
+                    var ds = d.toISOString().split('T')[0];
+                    var rec = weekly.find(function (r) { return r.date === ds; });
+                    labels.push(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()]);
+                    values.push(rec ? rec.count : 0);
                 }
 
-                var html = '';
-                data.records.forEach(function (rec, i) {
-                    var dt = new Date(rec.timestamp);
-                    html += '<tr>' +
-                        '<td>' + (i + 1) + '</td>' +
-                        '<td>' + dt.toLocaleDateString() + '</td>' +
-                        '<td>' + dt.toLocaleTimeString() + '</td>' +
-                        '<td><span class="badge badge-success">' + rec.status + '</span></td>' +
-                        '</tr>';
+                // Draw after layout paint
+                requestAnimationFrame(function () {
+                    var bar = document.getElementById('barChart');
+                    drawBarChart(bar, labels, values);
                 });
-                tbody.innerHTML = html;
-            } catch (err) {
-                // Ignore silently
-            }
-        }
 
-        function renderCourses(courses) {
-            var tbody = document.getElementById('coursesTable');
-            if (courses.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center" style="color:var(--text-secondary);padding:2rem;">No courses found</td></tr>';
-                return;
-            }
-            var html = '';
-            courses.forEach(function (c) {
-                html += '<tr>' +
-                    '<td><span class="badge badge-info">' + c.code + '</span></td>' +
-                    '<td>' + c.name + '</td>' +
-                    '<td>' + c.department + '</td>' +
-                    '<td>' + c.total_hours + 'h</td>' +
-                    '</tr>';
-            });
-            tbody.innerHTML = html;
-        }
-
-        function showSection(name, el) {
-            // Hide all sections
-            document.querySelectorAll('[id^="section-"]').forEach(function (s) {
-                s.classList.add('hidden');
-            });
-            // Show selected
-            document.getElementById('section-' + name).classList.remove('hidden');
-
-            // Update nav active state
-            document.querySelectorAll('.sidebar-nav a').forEach(function (a) {
-                a.classList.remove('active');
-            });
-            if (el) el.classList.add('active');
-
-            // Stop camera when leaving mark attendance
-            if (name !== 'markAttendance' && dashCameraActive) {
-                stopCamera();
-                dashCameraActive = false;
-                document.getElementById('startCamBtn').textContent = '📷 Start Camera';
-                document.getElementById('snapBtn').disabled = true;
-            }
-
-            // Close mobile sidebar
-            document.getElementById('sidebar').classList.remove('open');
-        }
-
-        function toggleDashCamera() {
-            if (dashCameraActive) {
-                stopCamera();
-                dashCameraActive = false;
-                document.getElementById('startCamBtn').textContent = '📷 Start Camera';
-                document.getElementById('snapBtn').disabled = true;
-            } else {
-                startCamera(document.getElementById('dashVideo'));
-                dashCameraActive = true;
-                document.getElementById('startCamBtn').textContent = '⏹ Stop Camera';
-                document.getElementById('snapBtn').disabled = false;
-            }
-        }
-
-        async function snapAndRecognize() {
-            var btn = document.getElementById('snapBtn');
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner"></span> Recognizing...';
-
-            var video = document.getElementById('dashVideo');
-            var frame = captureFrame(video);
-
-            if (!frame) {
-                showToast('Could not capture frame', 'error');
-                btn.disabled = false;
-                btn.textContent = '⚡ Recognize & Mark';
-                return;
-            }
-
-            try {
-                var result = await apiRecognize(frame);
-                var recResult = document.getElementById('recResult');
-                var recIcon = document.getElementById('recIcon');
-                var recText = document.getElementById('recText');
-
-                if (result.error) {
-                    recResult.className = 'recognition-result active unmatched';
-                    recIcon.textContent = '✗';
-                    recText.textContent = result.error;
-                    showToast(result.error, 'error');
-                } else if (result.faces && result.faces.length > 0 && result.faces[0].matched) {
-                    var face = result.faces[0];
-                    recResult.className = 'recognition-result active matched';
-                    recIcon.textContent = '✓';
-                    recText.textContent = face.name + ' (' + (face.similarity * 100).toFixed(1) + '%)';
-
-                    // Mark attendance
-                    var markResult = await apiMarkAttendance(face.user_id);
-                    showToast(markResult.message, 'success');
-
-                    // Reload stats
-                    var session = getSession();
-                    if (session) loadDashboard(session.id);
+                // Recent table
+                var recent = data.recent || [];
+                document.getElementById('recentCount').textContent = recent.length + ' records';
+                var tbody = document.getElementById('attendanceBody');
+                if (!recent.length) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted" style="padding:2rem;">No attendance records yet</td></tr>';
                 } else {
-                    recResult.className = 'recognition-result active unmatched';
-                    recIcon.textContent = '?';
-                    recText.textContent = result.message || 'Face not recognized';
-                    showToast(result.message || 'Face not recognized', 'warning');
+                    tbody.innerHTML = recent.map(function (r, i) {
+                        return '<tr>'
+                            + '<td>' + (i + 1) + '</td>'
+                            + '<td>' + formatDate(r.timestamp) + '</td>'
+                            + '<td>' + formatTime(r.timestamp) + '</td>'
+                            + '<td><span style="color:var(--success);font-weight:600;">Present ✓</span></td>'
+                            + '</tr>';
+                    }).join('');
                 }
 
-                // Auto-hide result after 5s
-                setTimeout(function () {
-                    recResult.classList.remove('active');
-                }, 5000);
-
             } catch (err) {
-                showToast('Recognition failed: ' + err.message, 'error');
+                showToast('Failed to load dashboard. Is the server running?', 'error');
             }
 
-            btn.disabled = false;
-            btn.textContent = '⚡ Recognize & Mark';
-        }
-
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('open');
-        }
+        });
     </script>
 </body>
 

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SFAM — Staff Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="dash-layout">
+
+    <!-- Top bar -->
+    <header class="dash-topbar">
+        <div class="dash-topbar-brand">🎓 Facial Attendance System — Staff</div>
+        <div class="dash-topbar-user">
+            <span id="topbarName">Loading…</span>
+            <button class="btn btn-ghost btn-sm" id="btnLogout">Sign Out</button>
+        </div>
+    </header>
+
+    <main class="dash-content">
+
+        <!-- Staff profile -->
+        <div class="profile-card" style="margin-bottom:1.5rem;">
+            <div class="profile-avatar">🏫</div>
+            <div>
+                <div class="profile-name" id="staffName">—</div>
+                <div class="profile-meta" id="staffMeta"></div>
+            </div>
+        </div>
+
+        <!-- Today summary: big stat + chart -->
+        <div class="stats-grid" style="margin-bottom:1.5rem;">
+            <div class="stat-card success-border">
+                <div class="stat-label">Present Today</div>
+                <div class="stat-value" id="statToday">—</div>
+                <div class="stat-sub">students marked present</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Students</div>
+                <div class="stat-value" id="statTotal">—</div>
+                <div class="stat-sub">registered</div>
+            </div>
+            <div class="stat-card warning-border">
+                <div class="stat-label">Absentees Today</div>
+                <div class="stat-value" id="statAbsent">—</div>
+                <div class="stat-sub">from total registered</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Avg Attendance</div>
+                <div class="stat-value" id="statAvg">—</div>
+                <div class="stat-sub">across all students</div>
+            </div>
+        </div>
+
+        <!-- Attendance distribution bar chart -->
+        <div class="card" style="margin-bottom:1.5rem;">
+            <div class="card-title">Student Attendance Overview (% per student)</div>
+            <canvas id="staffChart" style="width:100%;height:200px;"></canvas>
+        </div>
+
+        <!-- Present today table -->
+        <div class="table-card">
+            <div class="table-card-header">
+                <h3 style="font-size:1rem;">Attendance Records</h3>
+                <div class="staff-filter-bar" style="margin:0;">
+                    <input type="date" id="dateFilter" style="padding:.4rem .7rem;font-size:.88rem;">
+                    <button class="btn btn-primary btn-sm" id="btnFilter">Filter</button>
+                    <button class="btn btn-outline btn-sm" id="btnToday">Today</button>
+                </div>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Roll No</th>
+                        <th>Department</th>
+                        <th>Year</th>
+                        <th>Time In</th>
+                        <th>Attendance %</th>
+                    </tr>
+                </thead>
+                <tbody id="attendanceBody">
+                    <tr>
+                        <td colspan="7" class="text-center text-muted" style="padding:2rem;">Loading…</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="js/api.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+
+            var s = requireAuth();
+            if (!s) return;
+
+            if (s.user.role === 'student') {
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
+            document.getElementById('topbarName').textContent = s.user.name;
+            document.getElementById('btnLogout').onclick = function () {
+                clearSession();
+                window.location.href = 'index.html';
+            };
+
+            var userId = s.user.id;
+            var allStudents = [];
+
+            async function loadDashboard(date) {
+                try {
+                    var data = await apiStaffDashboard(userId, date || null);
+                    if (data.error) { showToast(data.error, 'error'); return; }
+
+                    // Staff profile
+                    var u = data.user;
+                    document.getElementById('staffName').textContent = u.name;
+                    var badges = [
+                        u.employee_code ? ('ID: ' + u.employee_code) : null,
+                        u.department ? u.department : null,
+                        u.specialization ? u.specialization : null,
+                        u.courses_teaching ? ('Courses: ' + u.courses_teaching) : null,
+                        u.email ? u.email : null,
+                    ].filter(Boolean);
+                    document.getElementById('staffMeta').innerHTML = badges
+                        .map(function (b) { return '<span class="profile-badge">' + b + '</span>'; })
+                        .join('');
+
+                    allStudents = data.all_students || [];
+                    var presentToday = data.students_present_today || 0;
+                    var total = allStudents.length;
+                    var absent = total - presentToday;
+
+                    // Avg attendance
+                    var avg = 0;
+                    if (total > 0) {
+                        avg = allStudents.reduce(function (sum, s) {
+                            return sum + (s.stats ? s.stats.percentage : 0);
+                        }, 0) / total;
+                        avg = Math.round(avg * 10) / 10;
+                    }
+
+                    document.getElementById('statToday').textContent = presentToday;
+                    document.getElementById('statTotal').textContent = total;
+                    document.getElementById('statAbsent').textContent = Math.max(0, absent);
+                    document.getElementById('statAvg').textContent = avg + '%';
+
+                    // Chart: attendance % per student (top 15)
+                    var chartStudents = allStudents.slice(0, 15);
+                    var chartLabels = chartStudents.map(function (s) { return s.name.split(' ')[0]; });
+                    var chartValues = chartStudents.map(function (s) { return s.stats ? s.stats.percentage : 0; });
+
+                    requestAnimationFrame(function () {
+                        var c = document.getElementById('staffChart');
+                        drawBarChart(c, chartLabels, chartValues, { color: '#00b4d8', pad: { top: 20, right: 15, bottom: 40, left: 40 } });
+                    });
+
+                    // Attendance list table
+                    var list = data.attendance_list || [];
+                    var tbody = document.getElementById('attendanceBody');
+                    if (!list.length) {
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:2rem;">No attendance records for this date</td></tr>';
+                    } else {
+                        tbody.innerHTML = list.map(function (r, i) {
+                            var pct = '-';
+                            var match = allStudents.find(function (s) { return s.id === r.id; });
+                            if (match && match.stats) pct = match.stats.percentage + '%';
+
+                            var timeIn = r.first_seen || r.time_in || '';
+                            return '<tr>'
+                                + '<td>' + (i + 1) + '</td>'
+                                + '<td style="font-weight:500;">' + r.name + '</td>'
+                                + '<td>' + (r.roll_no || '—') + '</td>'
+                                + '<td>' + (r.department || '—') + '</td>'
+                                + '<td>' + (r.year || '—') + '</td>'
+                                + '<td>' + (timeIn ? formatTime(timeIn) : '—') + '</td>'
+                                + '<td>' + pct + '</td>'
+                                + '</tr>';
+                        }).join('');
+                    }
+
+                } catch (err) {
+                    showToast('Failed to load dashboard. Is the server running?', 'error');
+                }
+            }
+
+            // Initial load
+            loadDashboard(null);
+
+            // Date filter
+            document.getElementById('btnFilter').onclick = function () {
+                var d = document.getElementById('dateFilter').value;
+                if (d) loadDashboard(d);
+            };
+            document.getElementById('btnToday').onclick = function () {
+                document.getElementById('dateFilter').value = '';
+                loadDashboard(null);
+            };
+
+        });
+    </script>
+</body>
+
+</html>
