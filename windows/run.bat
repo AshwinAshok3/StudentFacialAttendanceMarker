@@ -12,8 +12,8 @@ REM Resolve this script's directory (windows/)
 set "WIN_DIR=%~dp0"
 if "%WIN_DIR:~-1%"=="\" set "WIN_DIR=%WIN_DIR:~0,-1%"
 
-set "VENV_DIR=%WIN_DIR%\.venv"
-set "VENV_PYTHON=%VENV_DIR%\Scripts\python.exe"
+set "VENV_DIR=%WIN_DIR%\venv"
+set "VENV_PYTHON=%WIN_DIR%\venv\Scripts\python.exe"
 set "BACKEND_DIR=%WIN_DIR%\backend"
 set "REQUIRED_VERSION=3.10.5"
 

@@ -1,17 +1,38 @@
 # ==========================================================================
-# Pinned requirements for Python 3.10.5 compatibility (macOS)
-# GPU packages (torch, onnxruntime) installed by setup.sh separately
+# requirements.txt for macOS — Python 3.10.5
+#
+# INSTALL ORDER MATTERS — setup.sh installs these via pip in phases:
+#   Phase 1: numpy first (must be 1.x — insightface uses 1.x APIs)
+#   Phase 2: opencv pinned to last version that accepts numpy 1.x
+#   Phase 3: remaining packages
+#   Phase 4: insightface last (so its deps are already satisfied)
+#
+# DO NOT use 'pip install -r requirements.txt' directly.
+# setup.sh handles the phased install order.
 # ==========================================================================
+
+# Core numerical (MUST be 1.x — insightface 0.7.3 is not numpy 2.x compatible)
+numpy==1.26.4
+
+# Web framework
 flask==3.0.3
 flask-cors==4.0.1
-insightface==0.7.3
-opencv-python-headless==4.9.0.80
-numpy==1.26.4
+
+# Image processing
+# opencv 4.8.x is the last version to accept numpy 1.x on macOS
+opencv-python-headless==4.8.1.78
 Pillow==10.4.0
+
+# InsightFace runtime dependencies
 Cython==3.0.10
 scikit-learn==1.5.1
 scipy==1.13.1
 onnx==1.16.1
-albumentations==1.4.11
-prettytable==3.10.0
 tqdm==4.66.4
+prettytable==3.10.0
+
+# Vision augmentation (insightface optional dep)
+albumentations==1.3.1
+
+# Face recognition
+insightface==0.7.3
